@@ -1,8 +1,16 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
     const table = document.getElementById("table");
     const tbody = table.querySelector("tbody");
-    const rows = document.querySelectorAll("#table tbody tr");
+    let allMonitors = [];
+    let filteredMonitors = [];
 
+    // Infinite scroll variables
+    const INITIAL_LOAD_COUNT = 25;
+    const LOAD_MORE_COUNT = 25;
+    let displayedCount = 0;
+    let isLoading = false;
+
+    // Default filter state
     const filters = {
         brands: [],
         price: { min: 0, max: Infinity },
@@ -20,9 +28,274 @@ document.addEventListener("DOMContentLoaded", function () {
         extras: [],
         aspect_ratio: [],
         contrast: [],
-        ports: [],
+        ports: {},
+        extrasNegated: [],
         searchTerms: [],
     };
+
+    let sortingState = [];
+    const states = new Map();
+
+    // Load monitor data from JSON
+    try {
+        const response = await fetch("data/monitors.json");
+        if (!response.ok) {
+            throw new Error(`Failed to load monitors: ${response.status} ${response.statusText}`);
+        }
+        allMonitors = await response.json();
+        filteredMonitors = [...allMonitors];
+
+        // Initial render
+        displayedCount = INITIAL_LOAD_COUNT;
+        renderTableRows(getCurrentItems());
+
+        // Setup UI after data is loaded
+        setupFiltersAndEvents();
+        setupInfiniteScroll();
+
+        // Initial sort by Rtings PC gaming score
+        sortingState.push({ columnIndex: 5, ascending: false });
+        sortTableByColumns(sortingState);
+        updateSortingHeaders();
+
+        // Show UI now that data is loaded
+        document.querySelector("table").style.display = "block";
+        document.querySelector("#sidebar").style.display = "block";
+        document.querySelector("#main").scrollTo(0, 0);
+    } catch (error) {
+        console.error("Error loading monitor data:", error);
+        const errorMsg = document.createElement("div");
+        errorMsg.className = "error-message";
+        errorMsg.textContent = "Failed to load monitor data. Please try refreshing the page.";
+        table.parentNode.insertBefore(errorMsg, table);
+    }
+
+    // Get currently displayed items
+    function getCurrentItems() {
+        return filteredMonitors.slice(0, displayedCount);
+    }
+
+    // Setup infinite scroll
+    function setupInfiniteScroll() {
+        const mainContainer = document.getElementById("main");
+        const loadingIndicator = document.createElement("div");
+        loadingIndicator.id = "loading-indicator";
+        loadingIndicator.innerHTML = '<div class="spinner"></div><span>Loading more monitors...</span>';
+        table.after(loadingIndicator);
+
+        // Hide initially
+        loadingIndicator.style.display = "none";
+
+        mainContainer.addEventListener("scroll", function() {
+            if (isLoading) return;
+
+            // Calculate when we're close to the bottom
+            const scrollPosition = mainContainer.scrollTop + mainContainer.clientHeight;
+            const scrollThreshold = mainContainer.scrollHeight - 300; // Load more when 300px from bottom
+
+            if (scrollPosition >= scrollThreshold && displayedCount < filteredMonitors.length) {
+                loadMoreItems();
+            }
+        });
+    }
+
+    // Load more items when scrolling
+    function loadMoreItems() {
+        if (isLoading || displayedCount >= filteredMonitors.length) return;
+
+        isLoading = true;
+        document.getElementById("loading-indicator").style.display = "flex";
+
+        // Use setTimeout to give the browser a chance to show the loading indicator
+        setTimeout(() => {
+            const previousCount = displayedCount;
+            displayedCount = Math.min(displayedCount + LOAD_MORE_COUNT, filteredMonitors.length);
+
+            // Get the newly loaded items
+            const newItems = filteredMonitors.slice(previousCount, displayedCount);
+
+            // Append only the new items to the table
+            newItems.forEach(monitor => {
+                const row = createTableRow(monitor);
+                tbody.appendChild(row);
+            });
+
+            isLoading = false;
+            document.getElementById("loading-indicator").style.display = "none";
+
+            // Check if we've reached the end
+            if (displayedCount >= filteredMonitors.length) {
+                const endMessage = document.createElement("div");
+                endMessage.id = "end-message";
+                endMessage.textContent = `End of results • ${filteredMonitors.length} monitors`;
+                table.after(endMessage);
+            } else {
+                // Remove end message if it exists and we're not at the end anymore
+                const endMessage = document.getElementById("end-message");
+                if (endMessage) endMessage.remove();
+            }
+        }, 100);
+    }
+
+    function renderTableRows(monitors) {
+        // Clear existing rows
+        tbody.innerHTML = "";
+
+        // Create and append the table rows
+        monitors.forEach(monitor => {
+            const row = createTableRow(monitor);
+            tbody.appendChild(row);
+        });
+
+        // Remove end message if it exists
+        const endMessage = document.getElementById("end-message");
+        if (endMessage) endMessage.remove();
+
+        // Add end message if all monitors are loaded
+        if (displayedCount >= filteredMonitors.length) {
+            const endMessage = document.createElement("div");
+            endMessage.id = "end-message";
+            endMessage.textContent = `End of results • ${filteredMonitors.length} monitors`;
+            table.after(endMessage);
+        }
+    }
+
+    function createTableRow(monitor) {
+        const row = document.createElement("tr");
+
+        // Add all data attributes
+        row.setAttribute("data-title", monitor.title || "");
+        row.setAttribute("data-brand", monitor.brand || "");
+        row.setAttribute("data-price", monitor.price || "0");
+        row.setAttribute("data-screen-size", monitor.screenSize || "0");
+        row.setAttribute("data-resolution", monitor.resolution || "");
+        row.setAttribute("data-resolution-pixels", monitor.resolutionPixels || "");
+        row.setAttribute("data-panel", monitor.panel || "");
+        row.setAttribute("data-max-refresh-rate", monitor.maxRefreshRate || "0");
+        row.setAttribute("data-curved", monitor.curved ? "true" : "");
+
+        // Convert ports object to string with HTML entities for data attribute
+        let portsStr = "{}";
+        if (monitor.ports) {
+            portsStr = JSON.stringify(monitor.ports).replace(/"/g, "&#34;");
+        }
+        row.setAttribute("data-ports", portsStr);
+
+        row.setAttribute("data-coating", monitor.coating || "");
+        row.setAttribute("data-brightness", monitor.brightness || "0");
+        row.setAttribute("data-hdr", monitor.hdr || "None");
+        row.setAttribute("data-year", monitor.year || "0");
+        row.setAttribute("data-ppi", monitor.ppi || "0");
+        row.setAttribute("data-aspect-ratio", monitor.aspectRatio || "");
+        row.setAttribute("data-contrast", monitor.contrast || "");
+        row.setAttribute("data-bit-depth", monitor.bitDepth || "");
+        row.setAttribute("data-vesa-interface", monitor.vesaInterface || "None");
+        row.setAttribute("data-kvm", typeof monitor.kvm === 'boolean' ? monitor.kvm : "None");
+        row.setAttribute("data-speakers-number", monitor.speakersNumber || "0");
+        row.setAttribute("data-speakers-power", monitor.speakersPower || "0");
+        row.setAttribute("data-rtings-pc-gaming-score", monitor.rtingsPcGamingScore || "0");
+        row.setAttribute("data-rtings-office-score", monitor.rtingsOfficeScore || "0");
+        row.setAttribute("data-rtings-editing-score", monitor.rtingsEditingScore || "0");
+        row.setAttribute("data-rtings-mixed-usage-score", monitor.rtingsMixedUsageScore || "0");
+        row.setAttribute("data-rtings-media-consumption-score", monitor.rtingsMediaConsumptionScore || "0");
+
+        // Format the price for display
+        const formattedPrice = monitor.price ? `$${Math.round(monitor.price)}` : "$0";
+
+        // Get the selected Rtings score type
+        const selectedRtingsScoreType = document.getElementById("rtings-score-type")?.value || "pc-gaming";
+        const rtingsScore = monitor[`rtings${selectedRtingsScoreType.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('')}Score`] || 0;
+
+        // Format ports for display
+        let portsHtml = '<span class="empty">-</span>';
+        if (monitor.ports && Object.keys(monitor.ports).length > 0) {
+            portsHtml = '<div class="port-container">';
+            for (const [portType, count] of Object.entries(monitor.ports)) {
+                portsHtml += `<span class="port-item">${portType} x ${count}</span>`;
+            }
+            portsHtml += '</div>';
+        }
+
+        // Build the HTML for the row
+        row.innerHTML = `
+            <td data-label="Item" class="sticky">
+                <a href="${monitor.link || '#'}" target="_blank">
+                    ${monitor.title || ""}
+                </a>
+            </td>
+
+            <td data-label="Resolution">${monitor.resolution || ""}
+                <span class="resolution-pixels">${monitor.resolutionPixels ? `(${monitor.resolutionPixels})` : ""}</span>
+            </td>
+
+            <td data-label="Panel">${monitor.panel ? `  ${monitor.panel} ` : ""}</td>
+
+            <td data-label="Screen Size">${monitor.screenSize ? `${monitor.screenSize}"` : ""}</td>
+
+            <td data-label="Price">${formattedPrice}</td>
+
+            <td data-label="Rtings Score" class="rtings-score">
+                ${rtingsScore > 0
+                    ? `<span class="rtings-score-value">${parseFloat(rtingsScore).toFixed(1)}</span>`
+                    : `<span class="empty">None</span>`
+                }
+            </td>
+
+            <td data-label="Refresh Rate">${monitor.maxRefreshRate ? `${monitor.maxRefreshRate} Hz` : ""}</td>
+
+            <td data-label="Curved">
+                ${monitor.curved ? "Yes" : `<span class="empty">No</span>`}
+            </td>
+
+            <td data-label="Coating">${monitor.coating || `<span class="empty">-</span>`}</td>
+
+            <td data-label="HDR">
+                ${monitor.hdr && monitor.hdr !== "None"
+                    ? monitor.hdr
+                    : `<span class="empty">No</span>`
+                }
+            </td>
+
+            <td data-label="Brightness">${monitor.brightness ? `${monitor.brightness} cd/m²` : ""}</td>
+
+            <td data-label="Year">${monitor.year || ""}</td>
+
+            <td data-label="PPI">${monitor.ppi ? `${monitor.ppi} ppi` : ""}</td>
+
+            <td data-label="Aspect Ratio">${monitor.aspectRatio || ""}</td>
+
+            <td data-label="Contrast Ratio">${monitor.contrast || ""}</td>
+
+            <td data-label="Bit Depth">${monitor.bitDepth || ""}</td>
+
+            <td data-label="Vesa Mount">
+                ${monitor.vesaInterface && monitor.vesaInterface !== "None"
+                    ? monitor.vesaInterface
+                    : `<span class="empty">No</span>`
+                }
+            </td>
+
+            <td data-label="KVM">
+                ${monitor.kvm === true
+                    ? "Yes"
+                    : `<span class="empty">No</span>`
+                }
+            </td>
+
+            <td data-label="Speakers">
+                ${monitor.speakersPower > 0 && monitor.speakersNumber > 0
+                    ? `${monitor.speakersPower} W x ${monitor.speakersNumber}`
+                    : `<span class="empty">No</span>`
+                }
+            </td>
+
+            <td data-label="Ports">
+                ${portsHtml}
+            </td>
+        `;
+
+        return row;
+    }
 
     function updateFilters() {
         filters.brands = Array.from(
@@ -110,7 +383,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function applyFilters() {
-        const rowsToDisplay = [];
         const brandTypes = Array.from(
             document.querySelectorAll("div.filter-group.brand input.filter")
         ).map((input) => input.getAttribute("value"));
@@ -135,40 +407,30 @@ document.addEventListener("DOMContentLoaded", function () {
             document.querySelectorAll("div.filter-group.vesa input.filter")
         ).map((input) => input.getAttribute("value"));
 
-        rows.forEach((row) => {
-            const title = row.getAttribute("data-title");
-            const price = parseInt(row.getAttribute("data-price")) || 0;
-            const screenSize = parseFloat(row.getAttribute("data-screen-size")) || 0;
-            const resolutionValue = row.getAttribute("data-resolution");
-            const resolutionPixels = row.getAttribute("data-resolution-pixels");
-            const maxRefreshRate = row.getAttribute("data-max-refresh-rate") || 0;
-            const brightness = row.getAttribute("data-brightness") || 0;
-            const year = row.getAttribute("data-year") || 0;
-            const ppi = row.getAttribute("data-ppi") || 0;
-            const kvm = row.getAttribute("data-kvm") || 0;
-            const speakers = row.getAttribute("data-speakers-power") || 0;
-            const curved = row.getAttribute("data-curved") || 0;
-            const ports = row.getAttribute("data-ports") || "{}";
-            let portsObj = {};
-            try {
-                portsObj = JSON.parse(ports);
-            } catch (e) {
-                console.error("Failed to parse ports data:", e);
-            }
+        // Filter monitors
+        filteredMonitors = allMonitors.filter(monitor => {
+            const title = monitor.title || "";
+            const brand = (monitor.brand || "").toLowerCase().replace(/\s+/g, "_");
+            const price = parseFloat(monitor.price) || 0;
+            const screenSize = parseFloat(monitor.screenSize) || 0;
+            const resolutionValue = monitor.resolution || "";
+            const resolutionPixels = monitor.resolutionPixels || "";
+            const panel = monitor.panel || "";
+            const maxRefreshRate = parseInt(monitor.maxRefreshRate, 10) || 0;
+            const coating = monitor.coating || "";
+            const hdr = monitor.hdr || "None";
+            const brightness = parseInt(monitor.brightness, 10) || 0;
+            const year = parseInt(monitor.year, 10) || 0;
+            const ppi = parseInt(monitor.ppi, 10) || 0;
+            const bitDepth = monitor.bitDepth || "";
+            const vesa = monitor.vesaInterface || "None";
+            const kvm = monitor.kvm === true;
+            const curved = monitor.curved === true;
+            const speakers = monitor.speakersPower > 0;
+            const portsObj = monitor.ports || {};
 
-            let contrast = row.getAttribute("data-contrast") || 0;
-            if (contrast) {
-                let contrastValue = parseFloat(contrast.split(" ")[0]);
-                if (contrastValue > 0 && contrastValue < 2000) {
-                    contrast = "Standard";
-                } else if (contrastValue >= 2000) {
-                    contrast = "High";
-                } else {
-                    contrast = "Unknown";
-                }
-            }
-
-            let aspectRatio = row.getAttribute("data-aspect-ratio") || 0;
+            // Process aspect ratio for filtering
+            let aspectRatio = monitor.aspectRatio || "";
             if (aspectRatio) {
                 if (["1.778:1", "16:9"].includes(aspectRatio)) {
                     aspectRatio = "Standard";
@@ -181,55 +443,70 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
-            let vesa = row.getAttribute("data-vesa-interface") || 0;
+            // Process contrast for filtering
+            let contrast = monitor.contrast || "";
+            if (contrast) {
+                let contrastValue = parseFloat(contrast.split(" ")[0]);
+                if (contrastValue > 0 && contrastValue < 2000) {
+                    contrast = "Standard";
+                } else if (contrastValue >= 2000) {
+                    contrast = "High";
+                } else {
+                    contrast = "Unknown";
+                }
+            }
+
+            // Standardize for filter compatibility
+            let vesaForFilter = vesa;
             if (!vesaTypes.includes(vesa)) {
-                vesa = "Other";
+                vesaForFilter = "Other";
             }
 
-            let bitDepth = row.getAttribute("data-bit-depth") || 0;
+            let bitDepthForFilter = bitDepth;
             if (!bitDepthTypes.includes(bitDepth)) {
-                bitDepth = "Unknown";
+                bitDepthForFilter = "Unknown";
             }
 
-            let hdr = row.getAttribute("data-hdr");
+            let hdrForFilter = hdr;
             if (!hdrTypes.includes(hdr)) {
-                hdr = "Unknown";
+                hdrForFilter = "Unknown";
             }
 
-            let coating = row.getAttribute("data-coating");
+            let coatingForFilter = coating;
             if (!coatingTypes.includes(coating)) {
-                coating = "Unknown";
+                coatingForFilter = "Unknown";
             }
 
-            let panel = row.getAttribute("data-panel");
+            let panelForFilter = panel;
             if (!panelTypes.includes(panel)) {
-                panel = "Other";
+                panelForFilter = "Other";
             }
 
-            let brand = row.getAttribute("data-brand").toLowerCase().replace(/\s+/g, "_");
+            let brandForFilter = brand;
             if (!brandTypes.includes(brand)) {
-                brand = "Other";
+                brandForFilter = "Other";
             }
 
-            const matchesBrand = filters.brands.includes(brand);
+            // Apply all filters
+            const matchesBrand = filters.brands.includes(brandForFilter);
             const matchesPrice = price >= filters.price.min && price <= filters.price.max;
             const matchesScreenSize =
                 screenSize >= filters.screen_size.min &&
                 screenSize <= filters.screen_size.max;
             const matchesResolution = filters.resolution.includes(resolutionValue);
-            const matchesPanel = filters.panel.includes(panel);
+            const matchesPanel = filters.panel.includes(panelForFilter);
             const matchesMaxRefreshRate =
                 maxRefreshRate >= filters.max_refresh_rate.min &&
                 maxRefreshRate <= filters.max_refresh_rate.max;
-            const matchesCoating = filters.coating.includes(coating);
-            const matchesHdr = filters.hdr.includes(hdr);
+            const matchesCoating = filters.coating.includes(coatingForFilter);
+            const matchesHdr = filters.hdr.includes(hdrForFilter);
             const matchesBrightness =
                 brightness >= filters.brightness.min &&
                 brightness <= filters.brightness.max;
             const matchesYear = year >= filters.year.min && year <= filters.year.max;
             const matchesPpi = ppi >= filters.ppi.min && ppi <= filters.ppi.max;
-            const matchesBitDepth = filters.bit_depth.includes(bitDepth);
-            const matchesVesa = filters.vesa.includes(vesa);
+            const matchesBitDepth = filters.bit_depth.includes(bitDepthForFilter);
+            const matchesVesa = filters.vesa.includes(vesaForFilter);
             const matchesAspectRatio = filters.aspect_ratio.includes(aspectRatio);
             const matchesContrast = filters.contrast.includes(contrast);
             const matchesSearchTerms =
@@ -238,26 +515,26 @@ document.addEventListener("DOMContentLoaded", function () {
                     (keyword) =>
                         title?.toLowerCase().includes(keyword) ||
                         brand?.toLowerCase().includes(keyword) ||
-                        row.getAttribute("data-panel").toLowerCase().includes(keyword) ||
+                        panel?.toLowerCase().includes(keyword) ||
                         resolutionPixels?.toLowerCase().includes(keyword)
                 );
 
             let matchesKVM = true;
             if (filters.extras.includes("KVM")) {
-                matchesKVM = kvm === "true";
+                matchesKVM = kvm === true;
             }
 
             let matchesSpeakers = true;
             if (filters.extras.includes("Speakers")) {
-                matchesSpeakers = parseInt(speakers) > 0;
+                matchesSpeakers = speakers === true;
             }
 
             let matchesCurved = true;
             if (filters.extras.includes("Curved")) {
-                matchesCurved = curved === "true";
+                matchesCurved = curved === true;
             }
             if (filters.extrasNegated.includes("Curved")) {
-                matchesCurved = curved !== "true";
+                matchesCurved = curved !== true;
             }
 
             let matchesPorts = true;
@@ -287,8 +564,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
-            if (
-                matchesScreenSize &&
+            return matchesScreenSize &&
                 matchesPrice &&
                 matchesBrand &&
                 matchesResolution &&
@@ -307,17 +583,22 @@ document.addEventListener("DOMContentLoaded", function () {
                 matchesContrast &&
                 matchesPorts &&
                 matchesSearchTerms &&
-                matchesSpeakers
-            ) {
-                rowsToDisplay.push(row);
-            }
+                matchesSpeakers;
         });
 
-        // Hide all rows first
-        rows.forEach((row) => (row.style.display = "none"));
+        // Reset display counter when filters change
+        displayedCount = INITIAL_LOAD_COUNT;
 
-        // Show only filtered rows
-        rowsToDisplay.forEach((row) => (row.style.display = ""));
+        // Render filtered monitors
+        renderTableRows(getCurrentItems());
+
+        // Apply current sorting
+        if (sortingState.length > 0) {
+            sortTableByColumns(sortingState);
+        }
+
+        // Reset scrolling to show the start of results
+        document.getElementById("main").scrollTo(0, 0);
     }
 
     function handleFilterVisibility() {
@@ -338,39 +619,31 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 
-    document
-        .querySelectorAll("#filters input, #search-input, #filters select")
-        .forEach((input) => {
-            if (input.type === "number" || input.type === "text") {
-                input.addEventListener("input", updateFilters);
-            } else {
-                input.addEventListener("change", updateFilters);
-            }
-        });
-
-    let sortingState = [];
-
     function sortTableByColumns(sortingState) {
-        const rowsArray = Array.from(tbody.querySelectorAll("tr"));
+        if (!filteredMonitors.length) return;
 
-        rowsArray.sort((rowA, rowB) => {
+        // Sort the full filtered list
+        filteredMonitors.sort((monitorA, monitorB) => {
             for (let { columnIndex, ascending } of sortingState) {
-                let cellA = rowA.cells[columnIndex].textContent.trim();
-                let cellB = rowB.cells[columnIndex].textContent.trim();
-                const label = rowA.cells[columnIndex].getAttribute("data-label");
+                const ths = document.querySelectorAll("th[data-sort]");
+                if (columnIndex >= ths.length) continue;
 
-                // Handle specific data attributes for numeric columns
+                const label = ths[columnIndex].getAttribute("data-label");
+
+                let cellA, cellB;
+
+                // Handle specific data attributes for sorting
                 if (label === "Price") {
-                    cellA = rowA.getAttribute("data-price");
-                    cellB = rowB.getAttribute("data-price");
+                    cellA = parseFloat(monitorA.price) || 0;
+                    cellB = parseFloat(monitorB.price) || 0;
                 }
-                if (label === "Screen Size") {
-                    cellA = rowA.getAttribute("data-screen-size");
-                    cellB = rowB.getAttribute("data-screen-size");
+                else if (label === "Screen Size") {
+                    cellA = parseFloat(monitorA.screenSize) || 0;
+                    cellB = parseFloat(monitorB.screenSize) || 0;
                 }
-                if (label === "Resolution") {
+                else if (label === "Resolution") {
                     cellA = -1;
-                    let cellAPixels = rowA.getAttribute("data-resolution-pixels");
+                    let cellAPixels = monitorA.resolutionPixels;
                     if (cellAPixels) {
                         let resA = parseFloat(cellAPixels.split("x")[0]);
                         let resB = parseFloat(cellAPixels.split("x")[1]);
@@ -378,94 +651,90 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
                     cellB = -1;
-                    let cellBPixels = rowB.getAttribute("data-resolution-pixels");
+                    let cellBPixels = monitorB.resolutionPixels;
                     if (cellBPixels) {
                         let resA = parseFloat(cellBPixels.split("x")[0]);
                         let resB = parseFloat(cellBPixels.split("x")[1]);
                         cellB = resA * resB;
                     }
                 }
-                if (label === "Contrast Ratio") {
+                else if (label === "Contrast Ratio") {
                     cellA = -1;
-                    let cellAContrast = rowA.getAttribute("data-contrast");
+                    let cellAContrast = monitorA.contrast;
                     if (cellAContrast && cellAContrast != "0") {
                         let contrastValue = parseFloat(cellAContrast.split(" ")[0]);
                         cellA = contrastValue;
                     }
                     cellB = -1;
-                    let cellBContrast = rowB.getAttribute("data-contrast");
+                    let cellBContrast = monitorB.contrast;
                     if (cellBContrast && cellBContrast != "0") {
                         let contrastValue = parseFloat(cellBContrast.split(" ")[0]);
                         cellB = contrastValue;
                     }
                 }
-                if (label === "Panel") {
-                    cellA = rowA.getAttribute("data-panel");
-                    cellB = rowB.getAttribute("data-panel");
+                else if (label === "Panel") {
+                    cellA = monitorA.panel || "";
+                    cellB = monitorB.panel || "";
                 }
-                if (label === "Refresh Rate") {
-                    cellA = rowA.getAttribute("data-max-refresh-rate");
-                    cellB = rowB.getAttribute("data-max-refresh-rate");
+                else if (label === "Refresh Rate") {
+                    cellA = parseInt(monitorA.maxRefreshRate, 10) || 0;
+                    cellB = parseInt(monitorB.maxRefreshRate, 10) || 0;
                 }
-                if (label === "Brightness") {
-                    cellA = rowA.getAttribute("data-brightness");
-                    cellB = rowB.getAttribute("data-brightness");
+                else if (label === "Brightness") {
+                    cellA = parseInt(monitorA.brightness, 10) || 0;
+                    cellB = parseInt(monitorB.brightness, 10) || 0;
                 }
-                if (label === "Year") {
-                    cellA = rowA.getAttribute("data-year");
-                    cellB = rowB.getAttribute("data-year");
+                else if (label === "Year") {
+                    cellA = parseInt(monitorA.year, 10) || 0;
+                    cellB = parseInt(monitorB.year, 10) || 0;
                 }
-                if (label === "PPI") {
-                    cellA = rowA.getAttribute("data-ppi");
-                    cellB = rowB.getAttribute("data-ppi");
+                else if (label === "PPI") {
+                    cellA = parseInt(monitorA.ppi, 10) || 0;
+                    cellB = parseInt(monitorB.ppi, 10) || 0;
                 }
-                if (label === "Aspect Ratio") {
-                    cellA = rowA.getAttribute("data-aspect-ratio");
-                    cellB = rowB.getAttribute("data-aspect-ratio");
+                else if (label === "Aspect Ratio") {
+                    cellA = monitorA.aspectRatio || "";
+                    cellB = monitorB.aspectRatio || "";
                 }
-                if (label === "Bit Depth") {
-                    cellA = rowA.getAttribute("data-bit-depth");
-                    cellB = rowB.getAttribute("data-bit-depth");
+                else if (label === "Bit Depth") {
+                    cellA = monitorA.bitDepth || "";
+                    cellB = monitorB.bitDepth || "";
                 }
-                if (label === "Vesa Mount") {
+                else if (label === "Vesa Mount") {
                     cellA = -1;
-                    let cellAVesa = rowA.getAttribute("data-vesa-interface");
+                    let cellAVesa = monitorA.vesaInterface;
                     if (cellAVesa && cellAVesa != "None" && cellAVesa != "0") {
                         let vesaValue = parseFloat(cellAVesa.split(" ")[0]);
                         cellA = vesaValue;
                     }
                     cellB = -1;
-                    let cellBVesa = rowB.getAttribute("data-vesa-interface");
+                    let cellBVesa = monitorB.vesaInterface;
                     if (cellBVesa && cellBVesa != "None" && cellBVesa != "0") {
                         let vesaValue = parseFloat(cellBVesa.split(" ")[0]);
                         cellB = vesaValue;
                     }
                 }
-                if (label === "KVM") {
-                    cellA = rowA.getAttribute("data-kvm");
-                    cellB = rowB.getAttribute("data-kvm");
+                else if (label === "KVM") {
+                    cellA = monitorA.kvm === true ? "true" : "false";
+                    cellB = monitorB.kvm === true ? "true" : "false";
                 }
-                if (label === "Speakers") {
-                    cellA = rowA.getAttribute("data-speakers-power");
-                    cellB = rowB.getAttribute("data-speakers-power");
+                else if (label === "Speakers") {
+                    cellA = parseInt(monitorA.speakersPower, 10) || 0;
+                    cellB = parseInt(monitorB.speakersPower, 10) || 0;
                 }
-
-                if (label === "Rtings Score") {
+                else if (label === "Rtings Score") {
                     const selectedRtingsScoreType =
                         document.getElementById("rtings-score-type").value;
-                    cellA = rowA.getAttribute(
-                        `data-rtings-${selectedRtingsScoreType}-score`
-                    );
-                    cellB = rowB.getAttribute(
-                        `data-rtings-${selectedRtingsScoreType}-score`
-                    );
+                    const scoreTypeKey = `rtings${selectedRtingsScoreType.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('')}Score`;
+                    cellA = parseFloat(monitorA[scoreTypeKey]) || 0;
+                    cellB = parseFloat(monitorB[scoreTypeKey]) || 0;
                 }
-                if (label === "Coating") {
+                else if (label === "Coating") {
                     let coatingKeys = { "": 1, Matte: 2, "Semi-Glossy": 3, Glossy: 4 };
-                    cellA = coatingKeys[rowA.getAttribute("data-coating")];
-                    cellB = coatingKeys[rowB.getAttribute("data-coating")];
+                    cellA = coatingKeys[monitorA.coating || ""] || 0;
+                    cellB = coatingKeys[monitorB.coating || ""] || 0;
                 }
-                if (label === "HDR") {
+                else if (label === "HDR") {
                     let hdrKeys = {
                         "": 1,
                         None: 2,
@@ -477,8 +746,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         "DisplayHDR 1000": 8,
                         "DisplayHDR 1400": 9,
                     };
-                    cellA = hdrKeys[rowA.getAttribute("data-hdr")];
-                    cellB = hdrKeys[rowB.getAttribute("data-hdr")];
+                    cellA = hdrKeys[monitorA.hdr || "None"] || 0;
+                    cellB = hdrKeys[monitorB.hdr || "None"] || 0;
+                }
+                else {
+                    // Default to item name
+                    cellA = monitorA.title || "";
+                    cellB = monitorB.title || "";
                 }
 
                 // Handle empty cells
@@ -492,14 +766,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (comparison !== 0) return ascending ? comparison : -comparison;
                 } else {
                     // Otherwise sort alphabetically
-                    let comparison = cellA.localeCompare(cellB);
+                    let comparison = String(cellA).localeCompare(String(cellB));
                     if (comparison !== 0) return ascending ? comparison : -comparison;
                 }
             }
             return 0; // If all columns are equal, return 0
         });
 
-        rowsArray.forEach((row) => tbody.appendChild(row));
+        // Re-render with the sorted items
+        renderTableRows(getCurrentItems());
     }
 
     function updateSortingState(columnIndex, isMultiColumn) {
@@ -533,7 +808,11 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function setupSorting() {
+    function setupFiltersAndEvents() {
+        // Set up filter visibility
+        handleFilterVisibility();
+
+        // Set up sorting
         document.querySelectorAll("th[data-sort]").forEach((header) => {
             header.addEventListener("click", (event) => {
                 const columnIndex = Array.from(header.parentNode.children).indexOf(
@@ -544,107 +823,166 @@ document.addEventListener("DOMContentLoaded", function () {
                 updateSortingHeaders();
             });
         });
-    }
 
-    document.querySelector(".control-button.reset").addEventListener("click", (event) => {
-        document.getElementById("min-price").value = "";
-        document.getElementById("max-price").value = "";
-        document.getElementById("min-screen-size").value = "";
-        document.getElementById("max-screen-size").value = "";
-        document.getElementById("min-refresh-rate").value = "";
-        document.getElementById("max-refresh-rate").value = "";
-        document.getElementById("min-brightness").value = "";
-        document.getElementById("max-brightness").value = "";
-        document.getElementById("min-year").value = "";
-        document.getElementById("max-year").value = "";
-        document.getElementById("min-ppi").value = "";
-        document.getElementById("max-ppi").value = "";
-        document.getElementById("search-input").value = "";
-
-        // Resetting checkboxes to checked/unchecked state based on default
-        document.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
-            checkbox.checked = true;
-            checkbox.indeterminate = false;
-        });
-
-        // Reset states Map for tri-state checkboxes
-        checkboxes.forEach((checkbox) => {
-            states.set(checkbox, 0);
-        });
-
-        // Unchecking specific checkboxes that should not be checked by default
+        // Set up filter inputs
         document
-            .querySelectorAll('input[name="extras"]')
-            .forEach((checkbox) => (checkbox.checked = false));
+            .querySelectorAll("#filters input, #search-input, #filters select")
+            .forEach((input) => {
+                if (input.type === "number" || input.type === "text") {
+                    input.addEventListener("input", updateFilters);
+                } else {
+                    input.addEventListener("change", updateFilters);
+                }
+            });
+
+        // Reset button
+        document.querySelector(".control-button.reset").addEventListener("click", () => {
+            document.getElementById("min-price").value = "";
+            document.getElementById("max-price").value = "";
+            document.getElementById("min-screen-size").value = "";
+            document.getElementById("max-screen-size").value = "";
+            document.getElementById("min-refresh-rate").value = "";
+            document.getElementById("max-refresh-rate").value = "";
+            document.getElementById("min-brightness").value = "";
+            document.getElementById("max-brightness").value = "";
+            document.getElementById("min-year").value = "";
+            document.getElementById("max-year").value = "";
+            document.getElementById("min-ppi").value = "";
+            document.getElementById("max-ppi").value = "";
+            document.getElementById("search-input").value = "";
+
+            // Resetting checkboxes to checked/unchecked state based on default
+            document.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+                checkbox.checked = true;
+                checkbox.indeterminate = false;
+            });
+
+            // Reset states Map for tri-state checkboxes
+            const checkboxes = document.querySelectorAll(".tri");
+            checkboxes.forEach((checkbox) => {
+                states.set(checkbox, 0);
+            });
+
+            // Unchecking specific checkboxes that should not be checked by default
+            document
+                .querySelectorAll('input[name="extras"]')
+                .forEach((checkbox) => (checkbox.checked = false));
+            document
+                .querySelectorAll('input[name="ports"]')
+                .forEach((checkbox) => (checkbox.checked = false));
+
+            updateFilters();
+        });
+
+        // Share button
         document
-            .querySelectorAll('input[name="ports"]')
-            .forEach((checkbox) => (checkbox.checked = false));
+            .querySelector(".control-button.share")
+            .addEventListener("click", async () => {
+                try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    const button = document.querySelector(".control-button.share");
+                    const originalText = button.textContent;
+                    button.textContent = "Link Copied!";
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                    }, 2000);
+                } catch (err) {
+                    console.error("Failed to copy URL:", err);
+                }
+            });
 
-        updateFilters();
-    });
-
-    document
-        .querySelector(".control-button.share")
-        .addEventListener("click", async () => {
-            try {
-                await navigator.clipboard.writeText(window.location.href);
-                const button = document.querySelector(".control-button.share");
-                const originalText = button.textContent;
-                button.textContent = "Link Copied!";
-                setTimeout(() => {
-                    button.textContent = originalText;
-                }, 2000);
-            } catch (err) {
-                console.error("Failed to copy URL:", err);
-            }
+        // Specs toggle
+        document.querySelectorAll('.specs-toggle input[type="radio"]').forEach((input) => {
+            input.addEventListener("change", async () => {
+                if (input.value === "basic") {
+                    document.querySelector("#container").classList.add("basic");
+                    document.querySelector("#main").scrollTo(0, 0);
+                } else {
+                    document.querySelector("#container").classList.remove("basic");
+                }
+            });
         });
 
-    document.querySelectorAll('.specs-toggle input[type="radio"]').forEach((input) => {
-        input.addEventListener("change", async () => {
-            if (input.value === "basic") {
-                document.querySelector("#container").classList.add("basic");
-                document.querySelector("#main").scrollTo(0, 0);
-            } else {
-                document.querySelector("#container").classList.remove("basic");
-            }
-        });
-    });
-
-    document.getElementById("sort-select").addEventListener("change", function () {
-        const columnIndex = parseInt(this.value);
-        const ascending = this.options[this.selectedIndex].dataset.ascending === "true";
-        sortingState = [{ columnIndex, ascending }];
-        sortTableByColumns(sortingState);
-        updateSortingHeaders();
-    });
-
-    let basicToggle = document.querySelector('.specs-toggle input[value="basic"]');
-    if (basicToggle && basicToggle.checked) {
-        document.querySelector("#container").classList.add("basic");
-    }
-
-    document.getElementById("rtings-score-type").addEventListener("change", function () {
-        const selectedRtingsScoreType = this.value;
-        const selectedRtingsScoreLabel = this.options[this.selectedIndex].dataset.label;
-        rows.forEach((row) => {
-            const scoreCell = row.querySelector('td[data-label="Rtings Score"]');
-            const newScore = row.getAttribute(
-                `data-rtings-${selectedRtingsScoreType}-score`
-            );
-            if (newScore !== "0") {
-                scoreCell.querySelector(".rtings-score-value").textContent =
-                    parseFloat(newScore).toFixed(1);
-            }
-        });
-
-        // Check if currently sorting by Rtings score
-        const rtingsSortingState = sortingState.find((state) => state.columnIndex === 5);
-        if (rtingsSortingState) {
-            sortTableByColumns(sortingState);
+        // Basic mode check
+        let basicToggle = document.querySelector('.specs-toggle input[value="basic"]');
+        if (basicToggle && basicToggle.checked) {
+            document.querySelector("#container").classList.add("basic");
         }
 
-        encodeFilterState();
-    });
+        // Rtings score type change
+        document.getElementById("rtings-score-type").addEventListener("change", function () {
+            const selectedRtingsScoreType = this.value;
+
+            // Update scores in table
+            document.querySelectorAll("#table tbody tr").forEach((row) => {
+                const scoreCell = row.querySelector('td[data-label="Rtings Score"]');
+                const scoreValue = parseFloat(row.getAttribute(
+                    `data-rtings-${selectedRtingsScoreType}-score`
+                )) || 0;
+
+                if (scoreValue > 0) {
+                    scoreCell.innerHTML = `<span class="rtings-score-value">${scoreValue.toFixed(1)}</span>`;
+                } else {
+                    scoreCell.innerHTML = `<span class="empty">None</span>`;
+                }
+            });
+
+            // Check if currently sorting by Rtings score
+            const rtingsSortingState = sortingState.find((state) => state.columnIndex === 5);
+            if (rtingsSortingState) {
+                sortTableByColumns(sortingState);
+            }
+
+            encodeFilterState();
+        });
+
+        // Initialize tri-state checkboxes
+        const checkboxes = document.querySelectorAll(".tri");
+        checkboxes.forEach((checkbox) => {
+            // Get initial state from URL parameters
+            const params = new URLSearchParams(window.location.search);
+            const checkedExtras = params.get("e")?.split(",") || [];
+            const indeterminateExtras = params.get("ei")?.split(",") || [];
+
+            if (checkedExtras.includes(checkbox.value)) {
+                checkbox.checked = true;
+                checkbox.indeterminate = false;
+                states.set(checkbox, 1);
+            } else if (indeterminateExtras.includes(checkbox.value)) {
+                checkbox.checked = false;
+                checkbox.indeterminate = true;
+                states.set(checkbox, 2);
+            } else {
+                checkbox.checked = false;
+                checkbox.indeterminate = false;
+                states.set(checkbox, 0);
+            }
+
+            checkbox.addEventListener("click", function () {
+                let currentState = states.get(checkbox);
+                currentState = (currentState + 1) % 3;
+                if (currentState === 0) {
+                    checkbox.checked = false;
+                    checkbox.indeterminate = false;
+                } else if (currentState === 1) {
+                    checkbox.checked = true;
+                    checkbox.indeterminate = false;
+                } else if (currentState === 2) {
+                    checkbox.checked = false;
+                    checkbox.indeterminate = true;
+                }
+
+                states.set(checkbox, currentState);
+                updateFilters();
+            });
+        });
+
+        // Decode filter state from URL
+        decodeFilterState();
+
+        // Apply initial filters
+        updateFilters();
+    }
 
     function encodeFilterState() {
         const params = new URLSearchParams();
@@ -880,59 +1218,4 @@ document.addEventListener("DOMContentLoaded", function () {
                 .dispatchEvent(new Event("change"));
         }
     }
-
-    // Initialize tri-state checkboxes
-    const checkboxes = document.querySelectorAll(".tri");
-    const states = new Map();
-    checkboxes.forEach((checkbox) => {
-        // Get initial state from URL parameters
-        const params = new URLSearchParams(window.location.search);
-        const checkedExtras = params.get("e")?.split(",") || [];
-        const indeterminateExtras = params.get("ei")?.split(",") || [];
-
-        if (checkedExtras.includes(checkbox.value)) {
-            checkbox.checked = true;
-            checkbox.indeterminate = false;
-            states.set(checkbox, 1);
-        } else if (indeterminateExtras.includes(checkbox.value)) {
-            checkbox.checked = false;
-            checkbox.indeterminate = true;
-            states.set(checkbox, 2);
-        } else {
-            checkbox.checked = false;
-            checkbox.indeterminate = false;
-            states.set(checkbox, 0);
-        }
-
-        checkbox.addEventListener("click", function () {
-            let currentState = states.get(checkbox);
-            currentState = (currentState + 1) % 3;
-            if (currentState === 0) {
-                checkbox.checked = false;
-                checkbox.indeterminate = false;
-            } else if (currentState === 1) {
-                checkbox.checked = true;
-                checkbox.indeterminate = false;
-            } else if (currentState === 2) {
-                checkbox.checked = false;
-                checkbox.indeterminate = true;
-            }
-
-            states.set(checkbox, currentState);
-        });
-    });
-
-    handleFilterVisibility();
-    decodeFilterState();
-    updateFilters();
-    setupSorting();
-
-    sortingState.push({ columnIndex: 5, ascending: false });
-    sortTableByColumns(sortingState);
-    updateSortingHeaders();
-
-    document.querySelector("table").style.display = "block";
-    document.querySelector("#sidebar").style.display = "block";
-    document.querySelector("#filters").scrollTo(0, 0);
-    document.querySelector("#main").scrollTo(0, 0);
 });
