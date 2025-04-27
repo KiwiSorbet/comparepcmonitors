@@ -8,6 +8,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "cheerio": "^1.0.0",
         "vite": "^6.3.3"
     }
 }

@@ -7,3 +7,6 @@ node_modules/
 
 # Build directory
 dist/
+
+# Monitor data
+data/monitors.json

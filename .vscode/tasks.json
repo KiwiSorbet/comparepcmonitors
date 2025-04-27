@@ -9,7 +9,19 @@
                 "revealProblems": "onProblem",
                 "close": true
             },
-            "group": "build"
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Scrape Monitors",
+            "command": "node data/scrape_monitors.js",
+            "type": "shell",
+            "presentation": {
+                "revealProblems": "onProblem",
+                "close": false
+            },
+            "group": "none",
+            "problemMatcher": []
         }
     ]
 }
