@@ -1,0 +1,9 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Npm
+node_modules/
+
+# Build directory
+dist/
