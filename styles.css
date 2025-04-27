@@ -100,7 +100,7 @@ body {
 
 #main {
     overflow-x: auto;
-    height: 100vh;
+    height: calc(100vh - 100px);
     width: 100%;
     box-shadow: 0 4px 6px var(--shadow-color);
 }
