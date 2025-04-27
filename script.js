@@ -3,8 +3,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const tbody = table.querySelector("tbody");
     const rows = document.querySelectorAll("#table tbody tr");
 
-    updateLastModified();
-
     const filters = {
         brands: [],
         price: { min: 0, max: Infinity },
@@ -109,23 +107,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         applyFilters();
         encodeFilterState();
-    }
-
-    function updateLastModified() {
-        const lastModifiedUTC = new Date(
-            document.getElementById("last-modified").getAttribute("data-last-modified")
-        );
-        const now = new Date();
-        const diffInMinutes = Math.floor((now - lastModifiedUTC) / 60000);
-        const updatedDiv = document.querySelector(".updated-text");
-        if (diffInMinutes == 0) {
-            updatedDiv.textContent = `Updated now`;
-        } else if (diffInMinutes < 60) {
-            updatedDiv.textContent = `Updated ${diffInMinutes}m ago`;
-        } else {
-            const diffInHours = Math.floor(diffInMinutes / 60);
-            updatedDiv.textContent = `Updated ${diffInHours}h ago`;
-        }
     }
 
     function applyFilters() {
