@@ -628,149 +628,150 @@ document.addEventListener("DOMContentLoaded", async function () {
                 const ths = document.querySelectorAll("th[data-sort]");
                 if (columnIndex >= ths.length) continue;
 
-                const label = ths[columnIndex].getAttribute("data-label");
+                const sortType = ths[columnIndex].getAttribute("data-sort");
 
-                let cellA, cellB;
+                let valueA, valueB;
 
-                // Handle specific data attributes for sorting
-                if (label === "Price") {
-                    cellA = parseFloat(monitorA.price) || 0;
-                    cellB = parseFloat(monitorB.price) || 0;
+                // Extract the correct values based on the sort type
+                switch (sortType) {
+                    case "link":
+                        valueA = monitorA.title || "";
+                        valueB = monitorB.title || "";
+                        break;
+                    case "resolution":
+                        // Sort by pixel count (width * height)
+                        valueA = 0;
+                        valueB = 0;
+                        if (monitorA.resolutionPixels) {
+                            const [widthA, heightA] = monitorA.resolutionPixels.split('x').map(Number);
+                            valueA = widthA * heightA;
+                        }
+                        if (monitorB.resolutionPixels) {
+                            const [widthB, heightB] = monitorB.resolutionPixels.split('x').map(Number);
+                            valueB = widthB * heightB;
+                        }
+                        break;
+                    case "panel":
+                        valueA = monitorA.panel || "";
+                        valueB = monitorB.panel || "";
+                        break;
+                    case "screen size":
+                        valueA = parseFloat(monitorA.screenSize) || 0;
+                        valueB = parseFloat(monitorB.screenSize) || 0;
+                        break;
+                    case "price":
+                        valueA = parseFloat(monitorA.price) || 0;
+                        valueB = parseFloat(monitorB.price) || 0;
+                        break;
+                    case "rtings score":
+                        const selectedRtingsScoreType = document.getElementById("rtings-score-type").value;
+                        const scoreTypeKey = `rtings${selectedRtingsScoreType.split('-')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join('')}Score`;
+                        valueA = parseFloat(monitorA[scoreTypeKey]) || 0;
+                        valueB = parseFloat(monitorB[scoreTypeKey]) || 0;
+                        break;
+                    case "refresh rate":
+                        valueA = parseInt(monitorA.maxRefreshRate) || 0;
+                        valueB = parseInt(monitorB.maxRefreshRate) || 0;
+                        break;
+                    case "curved":
+                        valueA = monitorA.curved ? 1 : 0;
+                        valueB = monitorB.curved ? 1 : 0;
+                        break;
+                    case "coating":
+                        // Define an order for coating types
+                        const coatingOrder = { "": 0, "Unknown": 1, "Matte": 2, "Semi-Glossy": 3, "Glossy": 4 };
+                        valueA = coatingOrder[monitorA.coating || ""] || 0;
+                        valueB = coatingOrder[monitorB.coating || ""] || 0;
+                        break;
+                    case "hdr":
+                        // Define an order for HDR types
+                        const hdrOrder = {
+                            "": 0, "None": 1, "Unknown": 2, "HDR": 3, "HDR10": 4,
+                            "HDR10+": 5, "DisplayHDR 400": 6, "DisplayHDR 600": 7,
+                            "DisplayHDR 1000": 8, "DisplayHDR 1400": 9
+                        };
+                        valueA = hdrOrder[monitorA.hdr || "None"] || 0;
+                        valueB = hdrOrder[monitorB.hdr || "None"] || 0;
+                        break;
+                    case "brightness":
+                        valueA = parseInt(monitorA.brightness) || 0;
+                        valueB = parseInt(monitorB.brightness) || 0;
+                        break;
+                    case "year":
+                        valueA = parseInt(monitorA.year) || 0;
+                        valueB = parseInt(monitorB.year) || 0;
+                        break;
+                    case "ppi":
+                        valueA = parseInt(monitorA.ppi) || 0;
+                        valueB = parseInt(monitorB.ppi) || 0;
+                        break;
+                    case "aspect ratio":
+                        valueA = monitorA.aspectRatio || "";
+                        valueB = monitorB.aspectRatio || "";
+                        break;
+                    case "contrast ratio":
+                        valueA = 0;
+                        valueB = 0;
+                        // Extract the number from format like "1000 : 1"
+                        if (monitorA.contrast) {
+                            valueA = parseFloat(monitorA.contrast.split(" ")[0]) || 0;
+                        }
+                        if (monitorB.contrast) {
+                            valueB = parseFloat(monitorB.contrast.split(" ")[0]) || 0;
+                        }
+                        break;
+                    case "bit depth":
+                        valueA = monitorA.bitDepth || "";
+                        valueB = monitorB.bitDepth || "";
+                        break;
+                    case "vesa mount":
+                        // For VESA, sort by size (e.g., 100 from "100 x 100")
+                        valueA = 0;
+                        valueB = 0;
+                        if (monitorA.vesaInterface && monitorA.vesaInterface !== "None") {
+                            valueA = parseInt(monitorA.vesaInterface.split(" ")[0]) || 0;
+                        }
+                        if (monitorB.vesaInterface && monitorB.vesaInterface !== "None") {
+                            valueB = parseInt(monitorB.vesaInterface.split(" ")[0]) || 0;
+                        }
+                        break;
+                    case "kvm":
+                        valueA = monitorA.kvm === true ? 1 : 0;
+                        valueB = monitorB.kvm === true ? 1 : 0;
+                        break;
+                    case "speakers":
+                        // Sort by speaker power
+                        valueA = parseInt(monitorA.speakersPower) || 0;
+                        valueB = parseInt(monitorB.speakersPower) || 0;
+                        break;
+                    case "ports":
+                        // Sort by total number of ports
+                        valueA = monitorA.ports ? Object.values(monitorA.ports).reduce((sum, count) => sum + parseInt(count), 0) : 0;
+                        valueB = monitorB.ports ? Object.values(monitorB.ports).reduce((sum, count) => sum + parseInt(count), 0) : 0;
+                        break;
+                    default:
+                        valueA = monitorA.title || "";
+                        valueB = monitorB.title || "";
                 }
-                else if (label === "Screen Size") {
-                    cellA = parseFloat(monitorA.screenSize) || 0;
-                    cellB = parseFloat(monitorB.screenSize) || 0;
-                }
-                else if (label === "Resolution") {
-                    cellA = -1;
-                    let cellAPixels = monitorA.resolutionPixels;
-                    if (cellAPixels) {
-                        let resA = parseFloat(cellAPixels.split("x")[0]);
-                        let resB = parseFloat(cellAPixels.split("x")[1]);
-                        cellA = resA * resB;
-                    }
 
-                    cellB = -1;
-                    let cellBPixels = monitorB.resolutionPixels;
-                    if (cellBPixels) {
-                        let resA = parseFloat(cellBPixels.split("x")[0]);
-                        let resB = parseFloat(cellBPixels.split("x")[1]);
-                        cellB = resA * resB;
-                    }
-                }
-                else if (label === "Contrast Ratio") {
-                    cellA = -1;
-                    let cellAContrast = monitorA.contrast;
-                    if (cellAContrast && cellAContrast != "0") {
-                        let contrastValue = parseFloat(cellAContrast.split(" ")[0]);
-                        cellA = contrastValue;
-                    }
-                    cellB = -1;
-                    let cellBContrast = monitorB.contrast;
-                    if (cellBContrast && cellBContrast != "0") {
-                        let contrastValue = parseFloat(cellBContrast.split(" ")[0]);
-                        cellB = contrastValue;
-                    }
-                }
-                else if (label === "Panel") {
-                    cellA = monitorA.panel || "";
-                    cellB = monitorB.panel || "";
-                }
-                else if (label === "Refresh Rate") {
-                    cellA = parseInt(monitorA.maxRefreshRate, 10) || 0;
-                    cellB = parseInt(monitorB.maxRefreshRate, 10) || 0;
-                }
-                else if (label === "Brightness") {
-                    cellA = parseInt(monitorA.brightness, 10) || 0;
-                    cellB = parseInt(monitorB.brightness, 10) || 0;
-                }
-                else if (label === "Year") {
-                    cellA = parseInt(monitorA.year, 10) || 0;
-                    cellB = parseInt(monitorB.year, 10) || 0;
-                }
-                else if (label === "PPI") {
-                    cellA = parseInt(monitorA.ppi, 10) || 0;
-                    cellB = parseInt(monitorB.ppi, 10) || 0;
-                }
-                else if (label === "Aspect Ratio") {
-                    cellA = monitorA.aspectRatio || "";
-                    cellB = monitorB.aspectRatio || "";
-                }
-                else if (label === "Bit Depth") {
-                    cellA = monitorA.bitDepth || "";
-                    cellB = monitorB.bitDepth || "";
-                }
-                else if (label === "Vesa Mount") {
-                    cellA = -1;
-                    let cellAVesa = monitorA.vesaInterface;
-                    if (cellAVesa && cellAVesa != "None" && cellAVesa != "0") {
-                        let vesaValue = parseFloat(cellAVesa.split(" ")[0]);
-                        cellA = vesaValue;
-                    }
-                    cellB = -1;
-                    let cellBVesa = monitorB.vesaInterface;
-                    if (cellBVesa && cellBVesa != "None" && cellBVesa != "0") {
-                        let vesaValue = parseFloat(cellBVesa.split(" ")[0]);
-                        cellB = vesaValue;
-                    }
-                }
-                else if (label === "KVM") {
-                    cellA = monitorA.kvm === true ? "true" : "false";
-                    cellB = monitorB.kvm === true ? "true" : "false";
-                }
-                else if (label === "Speakers") {
-                    cellA = parseInt(monitorA.speakersPower, 10) || 0;
-                    cellB = parseInt(monitorB.speakersPower, 10) || 0;
-                }
-                else if (label === "Rtings Score") {
-                    const selectedRtingsScoreType =
-                        document.getElementById("rtings-score-type").value;
-                    const scoreTypeKey = `rtings${selectedRtingsScoreType.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('')}Score`;
-                    cellA = parseFloat(monitorA[scoreTypeKey]) || 0;
-                    cellB = parseFloat(monitorB[scoreTypeKey]) || 0;
-                }
-                else if (label === "Coating") {
-                    let coatingKeys = { "": 1, Matte: 2, "Semi-Glossy": 3, Glossy: 4 };
-                    cellA = coatingKeys[monitorA.coating || ""] || 0;
-                    cellB = coatingKeys[monitorB.coating || ""] || 0;
-                }
-                else if (label === "HDR") {
-                    let hdrKeys = {
-                        "": 1,
-                        None: 2,
-                        HDR: 3,
-                        HDR10: 4,
-                        "HDR10+": 5,
-                        "DisplayHDR 400": 6,
-                        "DisplayHDR 600": 7,
-                        "DisplayHDR 1000": 8,
-                        "DisplayHDR 1400": 9,
-                    };
-                    cellA = hdrKeys[monitorA.hdr || "None"] || 0;
-                    cellB = hdrKeys[monitorB.hdr || "None"] || 0;
-                }
-                else {
-                    // Default to item name
-                    cellA = monitorA.title || "";
-                    cellB = monitorB.title || "";
-                }
+                // Handle empty values
+                if (valueA === 0 && valueB === 0) continue;
+                if (valueA === 0) return ascending ? -1 : 1;
+                if (valueB === 0) return ascending ? 1 : -1;
 
-                // Handle empty cells
-                if (!cellA && !cellB) return 0;
-                if (!cellA) return ascending ? 1 : -1;
-                if (!cellB) return ascending ? -1 : 1;
-
-                // Sort numerically if possible
-                if (!isNaN(cellA) && !isNaN(cellB)) {
-                    const comparison = parseFloat(cellA) - parseFloat(cellB);
+                // Compare the values
+                if (typeof valueA === 'number' && typeof valueB === 'number') {
+                    const comparison = valueA - valueB;
                     if (comparison !== 0) return ascending ? comparison : -comparison;
                 } else {
-                    // Otherwise sort alphabetically
-                    let comparison = String(cellA).localeCompare(String(cellB));
+                    // String comparison
+                    const comparison = String(valueA).localeCompare(String(valueB));
                     if (comparison !== 0) return ascending ? comparison : -comparison;
                 }
             }
-            return 0; // If all columns are equal, return 0
+            return 0; // If all sorting criteria are equal
         });
 
         // Re-render with the sorted items
@@ -822,6 +823,17 @@ document.addEventListener("DOMContentLoaded", async function () {
                 updateSortingState(columnIndex, isMultiColumn);
                 updateSortingHeaders();
             });
+        });
+
+        // Add mobile sort-select handling
+        document.getElementById("sort-select").addEventListener("change", function() {
+            const sortOption = this.options[this.selectedIndex];
+            const columnIndex = parseInt(sortOption.value);
+            const ascending = sortOption.hasAttribute("data-ascending");
+
+            sortingState = [{ columnIndex, ascending }];
+            sortTableByColumns(sortingState);
+            updateSortingHeaders();
         });
 
         // Set up filter inputs
