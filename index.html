@@ -1,352 +1,980 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <title>Compare PC Monitors</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+            name="description"
+            content="Compare specs and prices for PC monitors. Sort and filter monitors to find the top rated ones under your budget."
+        />
 
-<head>
-    <title>Compare PC Monitors</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description"
-        content="Compare specs and prices for PC monitors. Sort and filter monitors to find the top rated ones under your budget." />
+        <!-- Icons -->
+        <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+        <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+        <link rel="shortcut icon" href="favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+        <meta name="msapplication-TileColor" content="#da532c" />
+        <meta name="theme-color" content="#ffffff" />
 
-    <!-- Icons -->
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <link rel="shortcut icon" href="favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
-    <meta name="msapplication-TileColor" content="#da532c">
-    <meta name="theme-color" content="#ffffff">
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Reddit+Sans:ital,wght@0,200..900;1,200..900&display=swap"
+            rel="stylesheet"
+        />
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Reddit+Sans:ital,wght@0,200..900;1,200..900&display=swap"
-        rel="stylesheet">
+        <!-- Links -->
+        <link rel="stylesheet" href="styles.css" />
+        <script src="script.js" defer></script>
 
-    <!-- Links -->
-    <link rel="stylesheet" href="styles.css" />
-    <script src="script.js" defer></script>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="canonical" href="https://comparepcmonitors.com/" />
+        <meta name="theme-color" content="#ffffff" />
+    </head>
 
-    <link rel="shortcut icon" href="/favicon.ico">
-    <link rel="canonical" href="https://comparepcmonitors.com/" />
-    <meta name="theme-color" content="#ffffff">
-</head>
+    <body>
+        <header class="header">
+            <div class="container">
+                <div class="logo"><a href="/">Compare PC Monitors</a></div>
+                <div class="side">
+                    <select
+                        id="rtings-score-type"
+                        class="rtings-score-dropdown"
+                        autocomplete="off"
+                    >
+                        <option value="pc-gaming" data-label="PC Gaming" selected>
+                            PC Gaming
+                        </option>
+                        <option value="office" data-label="Office">Office</option>
+                        <option value="editing" data-label="Editing">Editing</option>
+                    </select>
+                    <input
+                        type="text"
+                        id="search-input"
+                        placeholder="Search model, resolution"
+                    />
+                </div>
+            </div>
+        </header>
 
-<body>
+        <div id="last-modified" data-last-modified="2025-04-26T19:08:19.904Z"></div>
 
-    <header class="header">
-        <div class="container">
-            <div class="logo"><a href="/">Compare PC Monitors</a></div>
-            <div class="side">
-                <select id="rtings-score-type" class="rtings-score-dropdown" autocomplete="off">
-                    <option value="pc-gaming" data-label="PC Gaming" selected>PC Gaming</option>
-                    <option value="office" data-label="Office">Office</option>
-                    <option value="editing" data-label="Editing">Editing</option>
-                </select>
-                <input type="text" id="search-input" placeholder="Search model, resolution">
+        <div id="container">
+            <div id="sidebar" style="display: none">
+                <div id="filters">
+                    <div class="filter-group price">
+                        <label class="header">Price</label>
+                        <input
+                            type="number"
+                            id="min-price"
+                            name="min-price"
+                            min="0"
+                            placeholder="Min ($)"
+                        />
+                        <span class="separator">–</span>
+                        <input
+                            type="number"
+                            id="max-price"
+                            name="max-price"
+                            min="0"
+                            placeholder="Max ($)"
+                        />
+                    </div>
+
+                    <div class="filter-group screen-size">
+                        <label class="header">Screen Size</label>
+                        <input
+                            type="number"
+                            id="min-screen-size"
+                            name="min-screen-size"
+                            min="0"
+                            placeholder="Min"
+                        />
+                        <span class="separator">–</span>
+                        <input
+                            type="number"
+                            id="max-screen-size"
+                            name="max-screen-size"
+                            min="0"
+                            placeholder="Max"
+                        />
+                    </div>
+
+                    <div class="filter-group resolution">
+                        <label class="header"
+                            ><input
+                                type="checkbox"
+                                class="filter-header"
+                                name="resolution"
+                                checked
+                            />Resolution</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="resolution"
+                                value="4K"
+                                checked
+                            />
+                            4K</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="resolution"
+                                value="1440p"
+                                checked
+                            />
+                            1440p</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="resolution"
+                                value="1080p"
+                                checked
+                            />
+                            1080p</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="resolution"
+                                value="Other"
+                                checked
+                            />
+                            Other</label
+                        >
+                    </div>
+
+                    <div class="filter-group panel">
+                        <label class="header"
+                            ><input
+                                type="checkbox"
+                                class="filter-header"
+                                name="panel"
+                                checked
+                            />Panel</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="panel"
+                                value="WOLED"
+                                checked
+                            />
+                            WOLED</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="panel"
+                                value="QD-OLED"
+                                checked
+                            />
+                            QD-OLED</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="panel"
+                                value="Mini-LED"
+                                checked
+                            />
+                            Mini-LED</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="panel"
+                                value="VA"
+                                checked
+                            />
+                            VA</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="panel"
+                                value="IPS"
+                                checked
+                            />
+                            IPS</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="panel"
+                                value="TN"
+                                checked
+                            />
+                            TN</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="panel"
+                                value="Other"
+                                checked
+                            />
+                            Other</label
+                        >
+                    </div>
+                    <div class="filter-group refresh-rate">
+                        <label class="header">Refresh Rate</label>
+                        <input
+                            type="number"
+                            id="min-refresh-rate"
+                            name="min-refresh-rate"
+                            min="0"
+                            placeholder="Min"
+                        />
+                        <span class="separator">–</span>
+                        <input
+                            type="number"
+                            id="max-refresh-rate"
+                            name="max-refresh-rate"
+                            min="0"
+                            placeholder="Max"
+                        />
+                    </div>
+
+                    <div class="filter-group brightness">
+                        <label class="header">Brightness</label>
+                        <input
+                            type="number"
+                            id="min-brightness"
+                            name="min-brightness"
+                            min="0"
+                            placeholder="Min"
+                        />
+                        <span class="separator">–</span>
+                        <input
+                            type="number"
+                            id="max-brightness"
+                            name="max-brightness"
+                            min="0"
+                            placeholder="Max"
+                        />
+                    </div>
+
+                    <div class="filter-group ports">
+                        <label class="header">Ports</label>
+                        <div class="port-type">
+                            <div class="port-header">
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        class="filter port-main"
+                                        name="ports"
+                                        value="HDMI"
+                                    />
+                                    HDMI</label
+                                >
+                                <select class="port-count-select">
+                                    <option value="1">1+</option>
+                                    <option value="2">2+</option>
+                                    <option value="3">3+</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="port-type">
+                            <div class="port-header">
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        class="filter port-main"
+                                        name="ports"
+                                        value="DisplayPort"
+                                    />
+                                    DisplayPort</label
+                                >
+                                <select class="port-count-select">
+                                    <option value="1">1+</option>
+                                    <option value="2">2+</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="port-type">
+                            <div class="port-header">
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        class="filter port-main"
+                                        name="ports"
+                                        value="USB"
+                                    />
+                                    USB (Any)</label
+                                >
+                                <select class="port-count-select">
+                                    <option value="1">1+</option>
+                                    <option value="2">2+</option>
+                                    <option value="3">3+</option>
+                                    <option value="4">4+</option>
+                                    <option value="5">5+</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="port-type">
+                            <div class="port-header">
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        class="filter port-main"
+                                        name="ports"
+                                        value="USB-C"
+                                    />
+                                    USB (Type-C)</label
+                                >
+                            </div>
+                        </div>
+
+                        <div class="port-type">
+                            <div class="port-header">
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        class="filter port-main"
+                                        name="ports"
+                                        value="Thunderbolt"
+                                    />
+                                    Thunderbolt</label
+                                >
+                            </div>
+                        </div>
+
+                        <div class="port-type">
+                            <div class="port-header">
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        class="filter port-main"
+                                        name="ports"
+                                        value="Ethernet"
+                                    />
+                                    Ethernet</label
+                                >
+                            </div>
+                        </div>
+
+                        <div class="port-type">
+                            <div class="port-header">
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        class="filter port-main"
+                                        name="ports"
+                                        value="3.5 mm Audio In"
+                                    />
+                                    Audio In</label
+                                >
+                            </div>
+                        </div>
+
+                        <div class="port-type">
+                            <div class="port-header">
+                                <label
+                                    ><input
+                                        type="checkbox"
+                                        class="filter port-main"
+                                        name="ports"
+                                        value="3.5 mm Audio Out"
+                                    />
+                                    Audio Out</label
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-group hdr">
+                        <label class="header"
+                            ><input
+                                type="checkbox"
+                                class="filter-header"
+                                name="hdr"
+                                checked
+                            />HDR</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="hdr"
+                                value="HDR"
+                                checked
+                            />
+                            HDR</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="hdr"
+                                value="HDR10"
+                                checked
+                            />
+                            HDR10</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="hdr"
+                                value="HDR10+"
+                                checked
+                            />
+                            HDR10+</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="hdr"
+                                value="DisplayHDR 400"
+                                checked
+                            />
+                            DisplayHDR 400</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="hdr"
+                                value="DisplayHDR 600"
+                                checked
+                            />
+                            DisplayHDR 600</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="hdr"
+                                value="DisplayHDR 1000"
+                                checked
+                            />
+                            DisplayHDR 1000</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="hdr"
+                                value="None"
+                                checked
+                            />
+                            No</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="hdr"
+                                value="Unknown"
+                                checked
+                            />
+                            Unknown</label
+                        >
+                    </div>
+
+                    <div class="filter-group coating">
+                        <label class="header"
+                            ><input
+                                type="checkbox"
+                                class="filter-header"
+                                name="coating"
+                                checked
+                            />Coating</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="coating"
+                                value="Matte"
+                                checked
+                            />
+                            Matte</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="coating"
+                                value="Glossy"
+                                checked
+                            />
+                            Glossy</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="coating"
+                                value="Semi-Glossy"
+                                checked
+                            />
+                            Semi-Glossy</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="coating"
+                                value="Unknown"
+                                checked
+                            />
+                            Unknown</label
+                        >
+                    </div>
+
+                    <div class="filter-group brand">
+                        <label class="header"
+                            ><input
+                                type="checkbox"
+                                class="filter-header"
+                                name="brand"
+                                checked
+                            />Brand</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="brand"
+                                value="dell"
+                                checked
+                            />
+                            Dell</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="brand"
+                                value="lg"
+                                checked
+                            />
+                            LG</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="brand"
+                                value="asus"
+                                checked
+                            />
+                            ASUS</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="brand"
+                                value="msi"
+                                checked
+                            />
+                            MSI</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="brand"
+                                value="aoc"
+                                checked
+                            />
+                            AOC</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="brand"
+                                value="Other"
+                                checked
+                            />
+                            Other</label
+                        >
+                    </div>
+
+                    <div class="filter-group year">
+                        <label class="header">Year</label>
+                        <input
+                            type="number"
+                            id="min-year"
+                            name="min-year"
+                            min="0"
+                            placeholder="Min"
+                        />
+                        <span class="separator">–</span>
+                        <input
+                            type="number"
+                            id="max-year"
+                            name="max-year"
+                            min="0"
+                            placeholder="Max"
+                        />
+                    </div>
+
+                    <div class="filter-group ppi">
+                        <label class="header">PPI</label>
+                        <input
+                            type="number"
+                            id="min-ppi"
+                            name="min-ppi"
+                            min="0"
+                            placeholder="Min"
+                        />
+                        <span class="separator">–</span>
+                        <input
+                            type="number"
+                            id="max-ppi"
+                            name="max-ppi"
+                            min="0"
+                            placeholder="Max"
+                        />
+                    </div>
+
+                    <div class="filter-group aspect-ratio">
+                        <label class="header"
+                            ><input
+                                type="checkbox"
+                                class="filter-header"
+                                name="aspect-ratio"
+                                checked
+                            />Aspect Ratio</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="aspect-ratio"
+                                value="Standard"
+                                checked
+                            />
+                            Standard (16:9)</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="aspect-ratio"
+                                value="Ultrawide"
+                                checked
+                            />
+                            Ultrawide</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="aspect-ratio"
+                                value="Super Ultrawide"
+                                checked
+                            />
+                            Super Ultrawide</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="aspect-ratio"
+                                value="Other"
+                                checked
+                            />
+                            Other</label
+                        >
+                    </div>
+
+                    <div class="filter-group contrast-ratio">
+                        <label class="header"
+                            ><input
+                                type="checkbox"
+                                class="filter-header"
+                                name="aspect-ratio"
+                                checked
+                            />Contrast Ratio</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="aspect-ratio"
+                                value="Standard"
+                                checked
+                            />
+                            Standard (< 2000 : 1)</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="aspect-ratio"
+                                value="High"
+                                checked
+                            />
+                            High (> 2000 : 1)</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="aspect-ratio"
+                                value="Unknown"
+                                checked
+                            />
+                            Unknown</label
+                        >
+                    </div>
+
+                    <div class="filter-group bit-depth">
+                        <label class="header"
+                            ><input
+                                type="checkbox"
+                                class="filter-header"
+                                name="bit-depth"
+                                checked
+                            />Bit Depth</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="bit-depth"
+                                value="8 bits"
+                                checked
+                            />
+                            8 bits</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="bit-depth"
+                                value="8 bits (6 bits + FRC)"
+                                checked
+                            />
+                            8 bits (simulated)</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="bit-depth"
+                                value="10 bits"
+                                checked
+                            />
+                            10 bits</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="bit-depth"
+                                value="10 bits (8 bits + FRC)"
+                                checked
+                            />
+                            10 bits (simulated)</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="bit-depth"
+                                value="Unknown"
+                                checked
+                            />
+                            Unknown</label
+                        >
+                    </div>
+
+                    <div class="filter-group vesa">
+                        <label class="header"
+                            ><input
+                                type="checkbox"
+                                class="filter-header"
+                                name="vesa"
+                                checked
+                            />Vesa</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="vesa"
+                                value="100 x 100"
+                                checked
+                            />
+                            100 x 100</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="vesa"
+                                value="75 x 75"
+                                checked
+                            />
+                            75 x 75</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="vesa"
+                                value="None"
+                                checked
+                            />
+                            No</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="vesa"
+                                value="Other"
+                                checked
+                            />
+                            Other</label
+                        >
+                    </div>
+
+                    <div class="filter-group extras">
+                        <label class="header">Extras</label>
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter tri"
+                                name="extras"
+                                value="Curved"
+                            />
+                            Curved</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="extras"
+                                value="KVM"
+                            />
+                            KVM</label
+                        >
+                        <label
+                            ><input
+                                type="checkbox"
+                                class="filter"
+                                name="extras"
+                                value="Speakers"
+                            />
+                            Speakers</label
+                        >
+                    </div>
+
+                    <div id="controls">
+                        <button class="control-button reset">Reset Filters</button>
+                        <button class="control-button share">Share Results</button>
+                    </div>
+                </div>
+
+                <div class="specs-toggle">
+                    <label
+                        ><input
+                            type="radio"
+                            class="filter"
+                            name="specs-toggle"
+                            value="basic"
+                        />
+                        Basic Specs</label
+                    >
+                    <label
+                        ><input
+                            type="radio"
+                            class="filter"
+                            name="specs-toggle"
+                            value="all-specs"
+                            checked
+                        />
+                        All Specs</label
+                    >
+                </div>
+
+                <div class="sort-container">
+                    <select id="sort-select" class="filter" autocomplete="off">
+                        <option value="5" selected>Rtings Score (High to Low)</option>
+                        <option value="4" data-ascending="true">
+                            Price (Low to High)
+                        </option>
+                        <option value="4">Price (High to Low)</option>
+                        <option value="3" data-ascending="true">
+                            Size (Low to High)
+                        </option>
+                        <option value="3">Size (High to Low)</option>
+                        <option value="1" data-ascending="true">
+                            Resolution (Low to High)
+                        </option>
+                        <option value="1">Resolution (High to Low)</option>
+                        <option value="6" data-ascending="true">
+                            Refresh Rate (Low to High)
+                        </option>
+                        <option value="6">Refresh Rate (High to Low)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="main">
+                <table id="table" style="display: none">
+                    <thead>
+                        <tr>
+                            <th data-sort="link" class="sticky">Item</th>
+                            <th data-sort="resolution">Resolution</th>
+                            <th data-sort="panel">Panel</th>
+                            <th data-sort="screen size">Size</th>
+                            <th data-sort="price">Price</th>
+                            <th
+                                data-sort="rtings score"
+                                data-tooltip="Score from Rtings.com. Click on the score to read the full review. Change the score type in the dropdown above."
+                            >
+                                Rtings
+                            </th>
+                            <th data-sort="refresh rate">Refresh Rate</th>
+                            <th data-sort="curved">Curved</th>
+                            <th data-sort="coating">Coating</th>
+                            <th data-sort="hdr">HDR</th>
+                            <th data-sort="brightness">Brightness</th>
+                            <th data-sort="year">Year</th>
+                            <th data-sort="ppi">PPI</th>
+                            <th data-sort="aspect ratio">Aspect Ratio</th>
+                            <th data-sort="contrast ratio">Contrast Ratio</th>
+                            <th data-sort="bit depth">Bit Depth</th>
+                            <th data-sort="vesa mount">Vesa</th>
+                            <th data-sort="kvm">KVM</th>
+                            <th data-sort="speakers">Speakers</th>
+                            <th data-sort="ports">Ports</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="table-body"></tbody>
+                </table>
             </div>
         </div>
-    </header>
-
-    <div id="last-modified" data-last-modified="2025-04-26T19:08:19.904Z"></div>
-
-    <div id="container">
-
-        <div id="sidebar" style="display: none;">
-
-            <div id="filters">
-                <div class="filter-group price">
-                    <label class="header">Price</label>
-                    <input type="number" id="min-price" name="min-price" min="0" placeholder="Min ($)">
-                    <span class="separator">–</span>
-                    <input type="number" id="max-price" name="max-price" min="0" placeholder="Max ($)">
-                </div>
-
-                <div class="filter-group screen-size">
-                    <label class="header">Screen Size</label>
-                    <input type="number" id="min-screen-size" name="min-screen-size" min="0" placeholder="Min">
-                    <span class="separator">–</span>
-                    <input type="number" id="max-screen-size" name="max-screen-size" min="0" placeholder="Max">
-                </div>
-
-                <div class="filter-group resolution">
-                    <label class="header"><input type="checkbox" class="filter-header" name="resolution"
-                            checked>Resolution</label>
-                    <label><input type="checkbox" class="filter" name="resolution" value="4K" checked> 4K</label>
-                    <label><input type="checkbox" class="filter" name="resolution" value="1440p" checked> 1440p</label>
-                    <label><input type="checkbox" class="filter" name="resolution" value="1080p" checked> 1080p</label>
-                    <label><input type="checkbox" class="filter" name="resolution" value="Other" checked> Other</label>
-                </div>
-
-                <div class="filter-group panel">
-                    <label class="header"><input type="checkbox" class="filter-header" name="panel"
-                            checked>Panel</label>
-                    <label><input type="checkbox" class="filter" name="panel" value="WOLED" checked> WOLED</label>
-                    <label><input type="checkbox" class="filter" name="panel" value="QD-OLED" checked> QD-OLED</label>
-                    <label><input type="checkbox" class="filter" name="panel" value="Mini-LED" checked> Mini-LED</label>
-                    <label><input type="checkbox" class="filter" name="panel" value="VA" checked> VA</label>
-                    <label><input type="checkbox" class="filter" name="panel" value="IPS" checked> IPS</label>
-                    <label><input type="checkbox" class="filter" name="panel" value="TN" checked> TN</label>
-                    <label><input type="checkbox" class="filter" name="panel" value="Other" checked> Other</label>
-                </div>
-                <div class="filter-group refresh-rate">
-                    <label class="header">Refresh Rate</label>
-                    <input type="number" id="min-refresh-rate" name="min-refresh-rate" min="0" placeholder="Min">
-                    <span class="separator">–</span>
-                    <input type="number" id="max-refresh-rate" name="max-refresh-rate" min="0" placeholder="Max">
-                </div>
-
-                <div class="filter-group brightness">
-                    <label class="header">Brightness</label>
-                    <input type="number" id="min-brightness" name="min-brightness" min="0" placeholder="Min">
-                    <span class="separator">–</span>
-                    <input type="number" id="max-brightness" name="max-brightness" min="0" placeholder="Max">
-                </div>
-
-                <div class="filter-group ports">
-                    <label class="header">Ports</label>
-                    <div class="port-type">
-                        <div class="port-header">
-                            <label><input type="checkbox" class="filter port-main" name="ports" value="HDMI">
-                                HDMI</label>
-                            <select class="port-count-select">
-                                <option value="1">1+</option>
-                                <option value="2">2+</option>
-                                <option value="3">3+</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="port-type">
-                        <div class="port-header">
-                            <label><input type="checkbox" class="filter port-main" name="ports" value="DisplayPort">
-                                DisplayPort</label>
-                            <select class="port-count-select">
-                                <option value="1">1+</option>
-                                <option value="2">2+</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="port-type">
-                        <div class="port-header">
-                            <label><input type="checkbox" class="filter port-main" name="ports" value="USB">
-                                USB (Any)</label>
-                            <select class="port-count-select">
-                                <option value="1">1+</option>
-                                <option value="2">2+</option>
-                                <option value="3">3+</option>
-                                <option value="4">4+</option>
-                                <option value="5">5+</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="port-type">
-                        <div class="port-header">
-                            <label><input type="checkbox" class="filter port-main" name="ports" value="USB-C">
-                                USB (Type-C)</label>
-                        </div>
-                    </div>
-
-                    <div class="port-type">
-                        <div class="port-header">
-                            <label><input type="checkbox" class="filter port-main" name="ports" value="Thunderbolt">
-                                Thunderbolt</label>
-                        </div>
-                    </div>
-
-                    <div class="port-type">
-                        <div class="port-header">
-                            <label><input type="checkbox" class="filter port-main" name="ports" value="Ethernet">
-                                Ethernet</label>
-                        </div>
-                    </div>
-
-                    <div class="port-type">
-                        <div class="port-header">
-                            <label><input type="checkbox" class="filter port-main" name="ports" value="3.5 mm Audio In">
-                                Audio In</label>
-                        </div>
-                    </div>
-
-                    <div class="port-type">
-                        <div class="port-header">
-                            <label><input type="checkbox" class="filter port-main" name="ports"
-                                    value="3.5 mm Audio Out"> Audio Out</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="filter-group hdr">
-                    <label class="header"><input type="checkbox" class="filter-header" name="hdr" checked>HDR</label>
-                    <label><input type="checkbox" class="filter" name="hdr" value="HDR" checked> HDR</label>
-                    <label><input type="checkbox" class="filter" name="hdr" value="HDR10" checked> HDR10</label>
-                    <label><input type="checkbox" class="filter" name="hdr" value="HDR10+" checked> HDR10+</label>
-                    <label><input type="checkbox" class="filter" name="hdr" value="DisplayHDR 400" checked> DisplayHDR
-                        400</label>
-                    <label><input type="checkbox" class="filter" name="hdr" value="DisplayHDR 600" checked> DisplayHDR
-                        600</label>
-                    <label><input type="checkbox" class="filter" name="hdr" value="DisplayHDR 1000" checked> DisplayHDR
-                        1000</label>
-                    <label><input type="checkbox" class="filter" name="hdr" value="None" checked> No</label>
-                    <label><input type="checkbox" class="filter" name="hdr" value="Unknown" checked> Unknown</label>
-                </div>
-
-                <div class="filter-group coating">
-                    <label class="header"><input type="checkbox" class="filter-header" name="coating"
-                            checked>Coating</label>
-                    <label><input type="checkbox" class="filter" name="coating" value="Matte" checked> Matte</label>
-                    <label><input type="checkbox" class="filter" name="coating" value="Glossy" checked> Glossy</label>
-                    <label><input type="checkbox" class="filter" name="coating" value="Semi-Glossy" checked>
-                        Semi-Glossy</label>
-                    <label><input type="checkbox" class="filter" name="coating" value="Unknown" checked> Unknown</label>
-                </div>
-
-                <div class="filter-group brand">
-                    <label class="header"><input type="checkbox" class="filter-header" name="brand"
-                            checked>Brand</label>
-                    <label><input type="checkbox" class="filter" name="brand" value="dell" checked> Dell</label>
-                    <label><input type="checkbox" class="filter" name="brand" value="lg" checked> LG</label>
-                    <label><input type="checkbox" class="filter" name="brand" value="asus" checked> ASUS</label>
-                    <label><input type="checkbox" class="filter" name="brand" value="msi" checked> MSI</label>
-                    <label><input type="checkbox" class="filter" name="brand" value="aoc" checked> AOC</label>
-                    <label><input type="checkbox" class="filter" name="brand" value="Other" checked> Other</label>
-                </div>
-
-                <div class="filter-group year">
-                    <label class="header">Year</label>
-                    <input type="number" id="min-year" name="min-year" min="0" placeholder="Min">
-                    <span class="separator">–</span>
-                    <input type="number" id="max-year" name="max-year" min="0" placeholder="Max">
-                </div>
-
-                <div class="filter-group ppi">
-                    <label class="header">PPI</label>
-                    <input type="number" id="min-ppi" name="min-ppi" min="0" placeholder="Min">
-                    <span class="separator">–</span>
-                    <input type="number" id="max-ppi" name="max-ppi" min="0" placeholder="Max">
-                </div>
-
-                <div class="filter-group aspect-ratio">
-                    <label class="header"><input type="checkbox" class="filter-header" name="aspect-ratio"
-                            checked>Aspect Ratio</label>
-                    <label><input type="checkbox" class="filter" name="aspect-ratio" value="Standard" checked> Standard
-                        (16:9)</label>
-                    <label><input type="checkbox" class="filter" name="aspect-ratio" value="Ultrawide" checked>
-                        Ultrawide</label>
-                    <label><input type="checkbox" class="filter" name="aspect-ratio" value="Super Ultrawide" checked>
-                        Super Ultrawide</label>
-                    <label><input type="checkbox" class="filter" name="aspect-ratio" value="Other" checked>
-                        Other</label>
-                </div>
-
-                <div class="filter-group contrast-ratio">
-                    <label class="header"><input type="checkbox" class="filter-header" name="aspect-ratio"
-                            checked>Contrast Ratio</label>
-                    <label><input type="checkbox" class="filter" name="aspect-ratio" value="Standard" checked>
-                        Standard (< 2000 : 1)</label>
-                            <label><input type="checkbox" class="filter" name="aspect-ratio" value="High" checked> High
-                                (> 2000 : 1)</label>
-                            <label><input type="checkbox" class="filter" name="aspect-ratio" value="Unknown" checked>
-                                Unknown</label>
-                </div>
-
-                <div class="filter-group bit-depth">
-                    <label class="header"><input type="checkbox" class="filter-header" name="bit-depth" checked>Bit
-                        Depth</label>
-                    <label><input type="checkbox" class="filter" name="bit-depth" value="8 bits" checked> 8 bits</label>
-                    <label><input type="checkbox" class="filter" name="bit-depth" value="8 bits (6 bits + FRC)" checked>
-                        8 bits (simulated)</label>
-                    <label><input type="checkbox" class="filter" name="bit-depth" value="10 bits" checked> 10
-                        bits</label>
-                    <label><input type="checkbox" class="filter" name="bit-depth" value="10 bits (8 bits + FRC)"
-                            checked> 10 bits (simulated)</label>
-                    <label><input type="checkbox" class="filter" name="bit-depth" value="Unknown" checked>
-                        Unknown</label>
-                </div>
-
-                <div class="filter-group vesa">
-                    <label class="header"><input type="checkbox" class="filter-header" name="vesa" checked>Vesa</label>
-                    <label><input type="checkbox" class="filter" name="vesa" value="100 x 100" checked> 100 x
-                        100</label>
-                    <label><input type="checkbox" class="filter" name="vesa" value="75 x 75" checked> 75 x 75</label>
-                    <label><input type="checkbox" class="filter" name="vesa" value="None" checked> No</label>
-                    <label><input type="checkbox" class="filter" name="vesa" value="Other" checked> Other</label>
-                </div>
-
-                <div class="filter-group extras">
-                    <label class="header">Extras</label>
-                    <label><input type="checkbox" class="filter tri" name="extras" value="Curved"> Curved</label>
-                    <label><input type="checkbox" class="filter" name="extras" value="KVM"> KVM</label>
-                    <label><input type="checkbox" class="filter" name="extras" value="Speakers">
-                        Speakers</label>
-                </div>
-
-                <div id="controls">
-                    <button class="control-button reset">Reset Filters</button>
-                    <button class="control-button share">Share Results</button>
-                </div>
-            </div>
-
-            <div class="specs-toggle">
-                <label><input type="radio" class="filter" name="specs-toggle" value="basic"> Basic Specs</label>
-                <label><input type="radio" class="filter" name="specs-toggle" value="all-specs" checked> All
-                    Specs</label>
-            </div>
-
-            <div class="sort-container">
-                <select id="sort-select" class="filter" autocomplete="off">
-                    <option value="5" selected>Rtings Score (High to Low)</option>
-                    <option value="4" data-ascending="true">Price (Low to High)</option>
-                    <option value="4">Price (High to Low)</option>
-                    <option value="3" data-ascending="true">Size (Low to High)</option>
-                    <option value="3">Size (High to Low)</option>
-                    <option value="1" data-ascending="true">Resolution (Low to High)</option>
-                    <option value="1">Resolution (High to Low)</option>
-                    <option value="6" data-ascending="true">Refresh Rate (Low to High)</option>
-                    <option value="6">Refresh Rate (High to Low)</option>
-                </select>
-            </div>
-
-        </div>
-
-        <div id="main">
-            <table id="table" style="display: none;">
-                <thead>
-                    <tr>
-                        <th data-sort="link" class="sticky">Item</th>
-                        <th data-sort="resolution">Resolution</th>
-                        <th data-sort="panel">Panel</th>
-                        <th data-sort="screen size">Size</th>
-                        <th data-sort="price">Price</th>
-                        <th data-sort="rtings score"
-                            data-tooltip="Score from Rtings.com. Click on the score to read the full review. Change the score type in the dropdown above.">
-                            Rtings</span>
-                        </th>
-                        <th data-sort="refresh rate">Refresh Rate</th>
-                        <th data-sort="curved">Curved</th>
-                        <th data-sort="coating">Coating</th>
-                        <th data-sort="hdr">HDR</th>
-                        <th data-sort="brightness">Brightness</th>
-                        <th data-sort="year">Year</th>
-                        <th data-sort="ppi">PPI</th>
-                        <th data-sort="aspect ratio">Aspect Ratio</th>
-                        <th data-sort="contrast ratio">Contrast Ratio</th>
-                        <th data-sort="bit depth">Bit Depth</th>
-                        <th data-sort="vesa mount">Vesa</th>
-                        <th data-sort="kvm">KVM</th>
-                        <th data-sort="speakers">Speakers</th>
-                        <th data-sort="ports">Ports</th>
-                    </tr>
-                </thead>
-
-                <tbody id="table-body"></tbody>
-            </table>
-        </div>
-
-    </div>
-
-</body>
-
+    </body>
 </html>

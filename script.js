@@ -40,7 +40,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     try {
         const response = await fetch("data/monitors.json");
         if (!response.ok) {
-            throw new Error(`Failed to load monitors: ${response.status} ${response.statusText}`);
+            throw new Error(
+                `Failed to load monitors: ${response.status} ${response.statusText}`
+            );
         }
         allMonitors = await response.json();
         filteredMonitors = [...allMonitors];
@@ -66,7 +68,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         console.error("Error loading monitor data:", error);
         const errorMsg = document.createElement("div");
         errorMsg.className = "error-message";
-        errorMsg.textContent = "Failed to load monitor data. Please try refreshing the page.";
+        errorMsg.textContent =
+            "Failed to load monitor data. Please try refreshing the page.";
         table.parentNode.insertBefore(errorMsg, table);
     }
 
@@ -80,20 +83,24 @@ document.addEventListener("DOMContentLoaded", async function () {
         const mainContainer = document.getElementById("main");
         const loadingIndicator = document.createElement("div");
         loadingIndicator.id = "loading-indicator";
-        loadingIndicator.innerHTML = '<div class="spinner"></div><span>Loading more monitors...</span>';
+        loadingIndicator.innerHTML =
+            '<div class="spinner"></div><span>Loading more monitors...</span>';
         table.after(loadingIndicator);
 
         // Hide initially
         loadingIndicator.style.display = "none";
 
-        mainContainer.addEventListener("scroll", function() {
+        mainContainer.addEventListener("scroll", function () {
             if (isLoading) return;
 
             // Calculate when we're close to the bottom
             const scrollPosition = mainContainer.scrollTop + mainContainer.clientHeight;
             const scrollThreshold = mainContainer.scrollHeight - 300; // Load more when 300px from bottom
 
-            if (scrollPosition >= scrollThreshold && displayedCount < filteredMonitors.length) {
+            if (
+                scrollPosition >= scrollThreshold &&
+                displayedCount < filteredMonitors.length
+            ) {
                 loadMoreItems();
             }
         });
@@ -109,13 +116,16 @@ document.addEventListener("DOMContentLoaded", async function () {
         // Use setTimeout to give the browser a chance to show the loading indicator
         setTimeout(() => {
             const previousCount = displayedCount;
-            displayedCount = Math.min(displayedCount + LOAD_MORE_COUNT, filteredMonitors.length);
+            displayedCount = Math.min(
+                displayedCount + LOAD_MORE_COUNT,
+                filteredMonitors.length
+            );
 
             // Get the newly loaded items
             const newItems = filteredMonitors.slice(previousCount, displayedCount);
 
             // Append only the new items to the table
-            newItems.forEach(monitor => {
+            newItems.forEach((monitor) => {
                 const row = createTableRow(monitor);
                 tbody.appendChild(row);
             });
@@ -142,7 +152,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         tbody.innerHTML = "";
 
         // Create and append the table rows
-        monitors.forEach(monitor => {
+        monitors.forEach((monitor) => {
             const row = createTableRow(monitor);
             tbody.appendChild(row);
         });
@@ -190,21 +200,40 @@ document.addEventListener("DOMContentLoaded", async function () {
         row.setAttribute("data-contrast", monitor.contrast || "");
         row.setAttribute("data-bit-depth", monitor.bitDepth || "");
         row.setAttribute("data-vesa-interface", monitor.vesaInterface || "None");
-        row.setAttribute("data-kvm", typeof monitor.kvm === 'boolean' ? monitor.kvm : "None");
+        row.setAttribute(
+            "data-kvm",
+            typeof monitor.kvm === "boolean" ? monitor.kvm : "None"
+        );
         row.setAttribute("data-speakers-number", monitor.speakersNumber || "0");
         row.setAttribute("data-speakers-power", monitor.speakersPower || "0");
-        row.setAttribute("data-rtings-pc-gaming-score", monitor.rtingsPcGamingScore || "0");
+        row.setAttribute(
+            "data-rtings-pc-gaming-score",
+            monitor.rtingsPcGamingScore || "0"
+        );
         row.setAttribute("data-rtings-office-score", monitor.rtingsOfficeScore || "0");
         row.setAttribute("data-rtings-editing-score", monitor.rtingsEditingScore || "0");
-        row.setAttribute("data-rtings-mixed-usage-score", monitor.rtingsMixedUsageScore || "0");
-        row.setAttribute("data-rtings-media-consumption-score", monitor.rtingsMediaConsumptionScore || "0");
+        row.setAttribute(
+            "data-rtings-mixed-usage-score",
+            monitor.rtingsMixedUsageScore || "0"
+        );
+        row.setAttribute(
+            "data-rtings-media-consumption-score",
+            monitor.rtingsMediaConsumptionScore || "0"
+        );
 
         // Format the price for display
         const formattedPrice = monitor.price ? `$${Math.round(monitor.price)}` : "$0";
 
         // Get the selected Rtings score type
-        const selectedRtingsScoreType = document.getElementById("rtings-score-type")?.value || "pc-gaming";
-        const rtingsScore = monitor[`rtings${selectedRtingsScoreType.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('')}Score`] || 0;
+        const selectedRtingsScoreType =
+            document.getElementById("rtings-score-type")?.value || "pc-gaming";
+        const rtingsScore =
+            monitor[
+                `rtings${selectedRtingsScoreType
+                    .split("-")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join("")}Score`
+            ] || 0;
 
         // Format ports for display
         let portsHtml = '<span class="empty">-</span>';
@@ -213,50 +242,64 @@ document.addEventListener("DOMContentLoaded", async function () {
             for (const [portType, count] of Object.entries(monitor.ports)) {
                 portsHtml += `<span class="port-item">${portType} x ${count}</span>`;
             }
-            portsHtml += '</div>';
+            portsHtml += "</div>";
         }
 
         // Build the HTML for the row
         row.innerHTML = `
             <td data-label="Item" class="sticky">
-                <a href="${monitor.link || '#'}" target="_blank">
+                <a href="${monitor.link || "#"}" target="_blank">
                     ${monitor.title || ""}
                 </a>
             </td>
 
             <td data-label="Resolution">${monitor.resolution || ""}
-                <span class="resolution-pixels">${monitor.resolutionPixels ? `(${monitor.resolutionPixels})` : ""}</span>
+                <span class="resolution-pixels">${
+                    monitor.resolutionPixels ? `(${monitor.resolutionPixels})` : ""
+                }</span>
             </td>
 
             <td data-label="Panel">${monitor.panel ? `  ${monitor.panel} ` : ""}</td>
 
-            <td data-label="Screen Size">${monitor.screenSize ? `${monitor.screenSize}"` : ""}</td>
+            <td data-label="Screen Size">${
+                monitor.screenSize ? `${monitor.screenSize}"` : ""
+            }</td>
 
             <td data-label="Price">${formattedPrice}</td>
 
             <td data-label="Rtings Score" class="rtings-score">
-                ${rtingsScore > 0
-                    ? `<span class="rtings-score-value">${parseFloat(rtingsScore).toFixed(1)}</span>`
-                    : `<span class="empty">None</span>`
+                ${
+                    rtingsScore > 0
+                        ? `<span class="rtings-score-value">${parseFloat(
+                              rtingsScore
+                          ).toFixed(1)}</span>`
+                        : `<span class="empty">None</span>`
                 }
             </td>
 
-            <td data-label="Refresh Rate">${monitor.maxRefreshRate ? `${monitor.maxRefreshRate} Hz` : ""}</td>
+            <td data-label="Refresh Rate">${
+                monitor.maxRefreshRate ? `${monitor.maxRefreshRate} Hz` : ""
+            }</td>
 
             <td data-label="Curved">
                 ${monitor.curved ? "Yes" : `<span class="empty">No</span>`}
             </td>
 
-            <td data-label="Coating">${monitor.coating || `<span class="empty">-</span>`}</td>
+            <td data-label="Coating">${
+                monitor.coating || `<span class="empty">-</span>`
+            }</td>
 
             <td data-label="HDR">
-                ${monitor.hdr && monitor.hdr !== "None"
-                    ? monitor.hdr
-                    : `<span class="empty">No</span>`
+                ${
+                    monitor.hdr && monitor.hdr !== "None"
+                        ? monitor.hdr
+                        : `<span class="empty">No</span>`
                 }
             </td>
 
-            <td data-label="Brightness">${monitor.brightness ? `${monitor.brightness} cd/m²` : ""}</td>
+            <td data-label="Brightness">${
+                monitor.brightness ? `${monitor.brightness} cd/m²` : ""
+            }</td>
 
             <td data-label="Year">${monitor.year || ""}</td>
 
@@ -269,23 +312,22 @@ document.addEventListener("DOMContentLoaded", async function () {
             <td data-label="Bit Depth">${monitor.bitDepth || ""}</td>
 
             <td data-label="Vesa Mount">
-                ${monitor.vesaInterface && monitor.vesaInterface !== "None"
-                    ? monitor.vesaInterface
-                    : `<span class="empty">No</span>`
+                ${
+                    monitor.vesaInterface && monitor.vesaInterface !== "None"
+                        ? monitor.vesaInterface
+                        : `<span class="empty">No</span>`
                 }
             </td>
 
             <td data-label="KVM">
-                ${monitor.kvm === true
-                    ? "Yes"
-                    : `<span class="empty">No</span>`
-                }
+                ${monitor.kvm === true ? "Yes" : `<span class="empty">No</span>`}
             </td>
 
             <td data-label="Speakers">
-                ${monitor.speakersPower > 0 && monitor.speakersNumber > 0
-                    ? `${monitor.speakersPower} W x ${monitor.speakersNumber}`
-                    : `<span class="empty">No</span>`
+                ${
+                    monitor.speakersPower > 0 && monitor.speakersNumber > 0
+                        ? `${monitor.speakersPower} W x ${monitor.speakersNumber}`
+                        : `<span class="empty">No</span>`
                 }
             </td>
 
@@ -408,7 +450,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         ).map((input) => input.getAttribute("value"));
 
         // Filter monitors
-        filteredMonitors = allMonitors.filter(monitor => {
+        filteredMonitors = allMonitors.filter((monitor) => {
             const title = monitor.title || "";
             const brand = (monitor.brand || "").toLowerCase().replace(/\s+/g, "_");
             const price = parseFloat(monitor.price) || 0;
@@ -564,7 +606,8 @@ document.addEventListener("DOMContentLoaded", async function () {
                 }
             }
 
-            return matchesScreenSize &&
+            return (
+                matchesScreenSize &&
                 matchesPrice &&
                 matchesBrand &&
                 matchesResolution &&
@@ -583,7 +626,8 @@ document.addEventListener("DOMContentLoaded", async function () {
                 matchesContrast &&
                 matchesPorts &&
                 matchesSearchTerms &&
-                matchesSpeakers;
+                matchesSpeakers
+            );
         });
 
         // Reset display counter when filters change
@@ -643,11 +687,15 @@ document.addEventListener("DOMContentLoaded", async function () {
                         valueA = 0;
                         valueB = 0;
                         if (monitorA.resolutionPixels) {
-                            const [widthA, heightA] = monitorA.resolutionPixels.split('x').map(Number);
+                            const [widthA, heightA] = monitorA.resolutionPixels
+                                .split("x")
+                                .map(Number);
                             valueA = widthA * heightA;
                         }
                         if (monitorB.resolutionPixels) {
-                            const [widthB, heightB] = monitorB.resolutionPixels.split('x').map(Number);
+                            const [widthB, heightB] = monitorB.resolutionPixels
+                                .split("x")
+                                .map(Number);
                             valueB = widthB * heightB;
                         }
                         break;
@@ -664,10 +712,12 @@ document.addEventListener("DOMContentLoaded", async function () {
                         valueB = parseFloat(monitorB.price) || 0;
                         break;
                     case "rtings score":
-                        const selectedRtingsScoreType = document.getElementById("rtings-score-type").value;
-                        const scoreTypeKey = `rtings${selectedRtingsScoreType.split('-')
-                            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                            .join('')}Score`;
+                        const selectedRtingsScoreType =
+                            document.getElementById("rtings-score-type").value;
+                        const scoreTypeKey = `rtings${selectedRtingsScoreType
+                            .split("-")
+                            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join("")}Score`;
                         valueA = parseFloat(monitorA[scoreTypeKey]) || 0;
                         valueB = parseFloat(monitorB[scoreTypeKey]) || 0;
                         break;
@@ -681,16 +731,29 @@ document.addEventListener("DOMContentLoaded", async function () {
                         break;
                     case "coating":
                         // Define an order for coating types
-                        const coatingOrder = { "": 0, "Unknown": 1, "Matte": 2, "Semi-Glossy": 3, "Glossy": 4 };
+                        const coatingOrder = {
+                            "": 0,
+                            Unknown: 1,
+                            Matte: 2,
+                            "Semi-Glossy": 3,
+                            Glossy: 4,
+                        };
                         valueA = coatingOrder[monitorA.coating || ""] || 0;
                         valueB = coatingOrder[monitorB.coating || ""] || 0;
                         break;
                     case "hdr":
                         // Define an order for HDR types
                         const hdrOrder = {
-                            "": 0, "None": 1, "Unknown": 2, "HDR": 3, "HDR10": 4,
-                            "HDR10+": 5, "DisplayHDR 400": 6, "DisplayHDR 600": 7,
-                            "DisplayHDR 1000": 8, "DisplayHDR 1400": 9
+                            "": 0,
+                            None: 1,
+                            Unknown: 2,
+                            HDR: 3,
+                            HDR10: 4,
+                            "HDR10+": 5,
+                            "DisplayHDR 400": 6,
+                            "DisplayHDR 600": 7,
+                            "DisplayHDR 1000": 8,
+                            "DisplayHDR 1400": 9,
                         };
                         valueA = hdrOrder[monitorA.hdr || "None"] || 0;
                         valueB = hdrOrder[monitorB.hdr || "None"] || 0;
@@ -748,8 +811,18 @@ document.addEventListener("DOMContentLoaded", async function () {
                         break;
                     case "ports":
                         // Sort by total number of ports
-                        valueA = monitorA.ports ? Object.values(monitorA.ports).reduce((sum, count) => sum + parseInt(count), 0) : 0;
-                        valueB = monitorB.ports ? Object.values(monitorB.ports).reduce((sum, count) => sum + parseInt(count), 0) : 0;
+                        valueA = monitorA.ports
+                            ? Object.values(monitorA.ports).reduce(
+                                  (sum, count) => sum + parseInt(count),
+                                  0
+                              )
+                            : 0;
+                        valueB = monitorB.ports
+                            ? Object.values(monitorB.ports).reduce(
+                                  (sum, count) => sum + parseInt(count),
+                                  0
+                              )
+                            : 0;
                         break;
                     default:
                         valueA = monitorA.title || "";
@@ -762,7 +835,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 if (valueB === 0) return ascending ? 1 : -1;
 
                 // Compare the values
-                if (typeof valueA === 'number' && typeof valueB === 'number') {
+                if (typeof valueA === "number" && typeof valueB === "number") {
                     const comparison = valueA - valueB;
                     if (comparison !== 0) return ascending ? comparison : -comparison;
                 } else {
@@ -826,7 +899,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
 
         // Add mobile sort-select handling
-        document.getElementById("sort-select").addEventListener("change", function() {
+        document.getElementById("sort-select").addEventListener("change", function () {
             const sortOption = this.options[this.selectedIndex];
             const columnIndex = parseInt(sortOption.value);
             const ascending = sortOption.hasAttribute("data-ascending");
@@ -904,16 +977,18 @@ document.addEventListener("DOMContentLoaded", async function () {
             });
 
         // Specs toggle
-        document.querySelectorAll('.specs-toggle input[type="radio"]').forEach((input) => {
-            input.addEventListener("change", async () => {
-                if (input.value === "basic") {
-                    document.querySelector("#container").classList.add("basic");
-                    document.querySelector("#main").scrollTo(0, 0);
-                } else {
-                    document.querySelector("#container").classList.remove("basic");
-                }
+        document
+            .querySelectorAll('.specs-toggle input[type="radio"]')
+            .forEach((input) => {
+                input.addEventListener("change", async () => {
+                    if (input.value === "basic") {
+                        document.querySelector("#container").classList.add("basic");
+                        document.querySelector("#main").scrollTo(0, 0);
+                    } else {
+                        document.querySelector("#container").classList.remove("basic");
+                    }
+                });
             });
-        });
 
         // Basic mode check
         let basicToggle = document.querySelector('.specs-toggle input[value="basic"]');
@@ -922,31 +997,40 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
         // Rtings score type change
-        document.getElementById("rtings-score-type").addEventListener("change", function () {
-            const selectedRtingsScoreType = this.value;
+        document
+            .getElementById("rtings-score-type")
+            .addEventListener("change", function () {
+                const selectedRtingsScoreType = this.value;
 
-            // Update scores in table
-            document.querySelectorAll("#table tbody tr").forEach((row) => {
-                const scoreCell = row.querySelector('td[data-label="Rtings Score"]');
-                const scoreValue = parseFloat(row.getAttribute(
-                    `data-rtings-${selectedRtingsScoreType}-score`
-                )) || 0;
+                // Update scores in table
+                document.querySelectorAll("#table tbody tr").forEach((row) => {
+                    const scoreCell = row.querySelector('td[data-label="Rtings Score"]');
+                    const scoreValue =
+                        parseFloat(
+                            row.getAttribute(
+                                `data-rtings-${selectedRtingsScoreType}-score`
+                            )
+                        ) || 0;
 
-                if (scoreValue > 0) {
-                    scoreCell.innerHTML = `<span class="rtings-score-value">${scoreValue.toFixed(1)}</span>`;
-                } else {
-                    scoreCell.innerHTML = `<span class="empty">None</span>`;
+                    if (scoreValue > 0) {
+                        scoreCell.innerHTML = `<span class="rtings-score-value">${scoreValue.toFixed(
+                            1
+                        )}</span>`;
+                    } else {
+                        scoreCell.innerHTML = `<span class="empty">None</span>`;
+                    }
+                });
+
+                // Check if currently sorting by Rtings score
+                const rtingsSortingState = sortingState.find(
+                    (state) => state.columnIndex === 5
+                );
+                if (rtingsSortingState) {
+                    sortTableByColumns(sortingState);
                 }
+
+                encodeFilterState();
             });
-
-            // Check if currently sorting by Rtings score
-            const rtingsSortingState = sortingState.find((state) => state.columnIndex === 5);
-            if (rtingsSortingState) {
-                sortTableByColumns(sortingState);
-            }
-
-            encodeFilterState();
-        });
 
         // Initialize tri-state checkboxes
         const checkboxes = document.querySelectorAll(".tri");
